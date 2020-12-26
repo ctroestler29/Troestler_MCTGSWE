@@ -9,8 +9,8 @@ namespace MCTG
         string Name { get; set; }
         string Element { get; set; }
         int Damage { get; set; }
-        int Verfügbarkeit { get; set; }
-
+        string CardType { get; set; }
+        int Health { get; set; }
         void attack();
         bool isActive();
 

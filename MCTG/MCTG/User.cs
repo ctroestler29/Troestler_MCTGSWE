@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -11,15 +12,10 @@ namespace MCTG
         public static HttpClient ApiClient { get; set; }
         public string username { get; set; }
         public string password { get; set; }
-        List<ICard> stack = new List<ICard>();
+        public List<ICard> stack = new List<ICard>();
         public int coins { get; set; }
-        List<ICard> deck = new List<ICard>();
+        public List<ICard> deck = new List<ICard>();
 
-        public User(string _username, string _password)
-        {
-            username = _username;
-            password = _username;
-        }
 
         public static void initClient()
         {
@@ -70,10 +66,19 @@ namespace MCTG
             return 0;
         }
 
-        public List<ICard> shop()
+        public void shop()
         {
-            List<ICard> pack = new List<ICard>();
-            return pack;
+            Random rnd = new Random();
+            int r = 0;
+            CardCollection cc = new CardCollection();
+            cc.fill();
+
+            for (int i = 0; i <= 4; i++)
+            {
+                r = rnd.Next(0, cc.collec.Count() - 1);
+                deck.Add(cc.collec[r]);
+            }
+            coins -= 5;
         }
     }
 }
