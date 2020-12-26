@@ -6,6 +6,9 @@ namespace MCTG
     {
         static void Main(string[] args)
         {
+            Database db = new Database();
+            //db.insert();
+            Console.WriteLine(db.GET());
             HTTPServer server = new HTTPServer();
             server.Start();
 
