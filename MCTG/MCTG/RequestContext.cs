@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,6 +9,7 @@ namespace MCTG
 {
     class RequestContext
     {
+        Database db = new Database();
         public string http_verb;
         public IDictionary<string, string> header;
         public string protocol;
@@ -91,41 +93,86 @@ namespace MCTG
 
         public int POST(string path, string msg)
         {
-            if (msg.Length == 0)
+            
+            if (directory=="users")
             {
-                NoContent();
-                return 1;
-            }
+                JObject json = JObject.Parse(msg);
+                string username = json.SelectToken("Username").ToString();
+                string pw = json.SelectToken("Password").ToString();
 
-            if (!Directory.Exists(path))
-            {
-                DirNotFound();
-                return 1;
-            }
-
-            if (msgID.Length > 0)
-            {
-                DontUseFileID();
-                return 1;
-            }
-
-            int i = 1;
-            string hv2;
-            while (true)
-            {
-                hv2 = path + @"\" + i;
-                if (!File.Exists(hv2))
+                if (db.checkUser(username))
                 {
-                    break;
+                    db.createUser(username, pw);
+                    statusCode = 200;
+                    statusPhrase = "Ok";
+                    response = "User " + username + " successfully created!";
+                    return 0;
                 }
-                i++;
+                else
+                {
+                    statusCode = 900;
+                    statusPhrase = "Username already exists!";
+                    response = "Username: " + username + " already exists! Please choose a different one!";
+                    return 1;
+                }
             }
 
-            File.WriteAllText(hv2, msg);
-            statusCode = 200;
-            statusPhrase = "OK";
-            response = "File with ID: " + i + " successfully created";
-            msgID = i.ToString();
+            if(directory== "sessions")
+            {
+                JObject json = JObject.Parse(msg);
+                string username = json.SelectToken("Username").ToString();
+                string pw = json.SelectToken("Password").ToString();
+
+                if(db.Login(username, pw))
+                {
+                    statusCode = 200;
+                    statusPhrase = "Ok";
+                    response = "Successfull login with User " + username;
+                    return 0;
+                }
+                else
+                {
+                    statusCode = 800;
+                    statusPhrase = "Wrong Username/password";
+                    response = "Wrong login-Data! Please try again.";
+                    return 1;
+                }
+            }
+            //if (msg.Length == 0)
+            //{
+            //    NoContent();
+            //    return 1;
+            //}
+
+            //if (!Directory.Exists(path))
+            //{
+            //    DirNotFound();
+            //    return 1;
+            //}
+
+            //if (msgID.Length > 0)
+            //{
+            //    DontUseFileID();
+            //    return 1;
+            //}
+
+            //int i = 1;
+            //string hv2;
+            //while (true)
+            //{
+            //    hv2 = path + @"\" + i;
+            //    if (!File.Exists(hv2))
+            //    {
+            //        break;
+            //    }
+            //    i++;
+            //}
+
+            //File.WriteAllText(hv2, msg);
+            //statusCode = 200;
+            //statusPhrase = "OK";
+            //response = "File with ID: " + i + " successfully created";
+            //msgID = i.ToString();
 
             return 0;
         }

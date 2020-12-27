@@ -8,7 +8,7 @@ namespace MCTG
         {
             Database db = new Database();
             //db.insert();
-            Console.WriteLine(db.GET());
+            //Console.WriteLine(db.checkUser());
             HTTPServer server = new HTTPServer();
             server.Start();
 

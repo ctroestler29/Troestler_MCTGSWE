@@ -18,7 +18,7 @@ namespace MCTG
             Console.WriteLine(listener.LocalEndpoint);
             counter = 0;
             Console.CancelKeyPress += (sender, e) => Environment.Exit(0);
-            String data = null;
+            //String data = null;
             Byte[] bytes = new Byte[256];
             while (true)
             {
