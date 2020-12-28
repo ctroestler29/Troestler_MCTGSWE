@@ -9,13 +9,12 @@ namespace MCTG
     //Class to handle each client request separatly
     public class HandleClient
     {
+        User user = new User();
         RequestContext rc = new RequestContext();
-        TcpClient clientSocket;
-        string clNo;
         public void startClient(TcpClient inClientSocket, string clineNo)
         {
-            this.clientSocket = inClientSocket;
-            this.clNo = clineNo;
+            user.Client = inClientSocket;
+            user.ClNo = clineNo;
             Thread ctThread = new Thread(doChat);
             ctThread.Start();
         }
@@ -34,10 +33,10 @@ namespace MCTG
                 try
                 {
                     requestCount = requestCount + 1;
-                    NetworkStream networkStream = clientSocket.GetStream();
+                    NetworkStream networkStream = user.Client.GetStream();
                     int i = networkStream.Read(bytesFrom, 0, bytesFrom.Length);
                     dataFromClient = System.Text.Encoding.ASCII.GetString(bytesFrom, 0, i);
-                    Console.WriteLine(" >> " + "From client-" + clNo + dataFromClient);
+                    Console.WriteLine(" >> " + "From client-" + user.ClNo + dataFromClient);
                     rc.receive(dataFromClient);
 
                     string sb = rc.CreateHttpResponse();

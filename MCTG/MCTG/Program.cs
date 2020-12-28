@@ -7,6 +7,7 @@ namespace MCTG
         static void Main(string[] args)
         {
             Database db = new Database();
+            //db.createTables();
             //db.insert();
             //Console.WriteLine(db.checkUser());
             HTTPServer server = new HTTPServer();

@@ -11,7 +11,7 @@ namespace MCTG
         public void Start()
         {
             RequestContext rc = new RequestContext();
-            TcpListener listener = new TcpListener(IPAddress.Loopback, 8000);
+            TcpListener listener = new TcpListener(IPAddress.Loopback, 10001);
             TcpClient clientSocket = default(TcpClient);
             int counter = 0;
             listener.Start(5);

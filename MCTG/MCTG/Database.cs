@@ -14,8 +14,11 @@ namespace MCTG
         public void createTables()
         {
             connection.Open();
-            NpgsqlCommand cmd = new NpgsqlCommand("CREATE TABLE Persons ( username varchar(255), password varchar(255)); ", connection);
-            cmd.ExecuteNonQuery();
+            //NpgsqlCommand cmd = new NpgsqlCommand("CREATE TABLE packages ( Id varchar(255), Name varchar(255)); ", connection);
+            //cmd.ExecuteNonQuery();
+            NpgsqlCommand cmd2 = new NpgsqlCommand("CREATE TABLE cards ( Id varchar(255), Name varchar(255), Damage DECIMAL(5,1)); ", connection);
+            cmd2.ExecuteNonQuery();
+            connection.Close();
         }
 
         public void createUser(string username, string pw)
@@ -61,6 +64,16 @@ namespace MCTG
             }
             connection.Close();
             return check;
+        }
+
+        public bool createCard(string Id, string Name, double Damage)
+        {
+            connection.Open();
+            NpgsqlCommand cmd2 = new NpgsqlCommand("insert into cards (Id, Name, Damage) values('" + Id + "', '" + Name + "', '"+ Damage +"')", connection);
+            cmd2.ExecuteNonQuery();
+
+            connection.Close();
+            return true;
         }
     }
 }

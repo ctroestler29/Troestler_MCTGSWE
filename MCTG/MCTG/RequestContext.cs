@@ -9,6 +9,7 @@ namespace MCTG
 {
     class RequestContext
     {
+        User user = new User();
         Database db = new Database();
         public string http_verb;
         public IDictionary<string, string> header;
@@ -128,6 +129,7 @@ namespace MCTG
                     statusCode = 200;
                     statusPhrase = "Ok";
                     response = "Successfull login with User " + username;
+                    user.username = username;
                     return 0;
                 }
                 else
@@ -137,6 +139,32 @@ namespace MCTG
                     response = "Wrong login-Data! Please try again.";
                     return 1;
                 }
+            }
+
+            if(directory== "packages")
+            {
+                user.Authorization = header.ElementAt(4).Value;
+
+                if(user.Authorization != "Basic admin-mtcgToken")
+                {
+                    statusCode = 700;
+                    statusPhrase = "No Admin!";
+                    response = "Only admins are allowed to create packages!";
+                    return 1;
+                }
+                JObject json;
+                string[] arr = msg.Split("},");
+                for (int i = 0; i < arr.Length-1; i++)
+                {
+                    arr[i] += "}";
+                    arr[i] = arr[i].Replace("[", "");
+                    arr[i] = arr[i].Replace("]", "");
+                    json = JObject.Parse(arr[i]);
+                    db.createCard(json.SelectToken("Id").ToString(), json.SelectToken("Name").ToString(), double.Parse(json.SelectToken("Damage").ToString()));
+                }
+
+
+
             }
             //if (msg.Length == 0)
             //{
