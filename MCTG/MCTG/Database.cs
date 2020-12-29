@@ -14,17 +14,19 @@ namespace MCTG
         public void createTables()
         {
             connection.Open();
-            //NpgsqlCommand cmd = new NpgsqlCommand("CREATE TABLE packages ( Id varchar(255), Name varchar(255)); ", connection);
+            //NpgsqlCommand cmd = new NpgsqlCommand("CREATE TABLE cards ( Id varchar(255), Name varchar(255), Damage NUMERIC(5,2), Pack INTEGER);", connection);
             //cmd.ExecuteNonQuery();
-            NpgsqlCommand cmd2 = new NpgsqlCommand("CREATE TABLE cards ( Id varchar(255), Name varchar(255), Damage DECIMAL(5,1)); ", connection);
-            cmd2.ExecuteNonQuery();
+            //NpgsqlCommand cmd2 = new NpgsqlCommand("CREATE TABLE sessions ( SessionId varchar(255), SessionTime time); ", connection);
+            //cmd2.ExecuteNonQuery();
+            //NpgsqlCommand cmd = new NpgsqlCommand("DELETE FROM cards;", connection);
+            //cmd.ExecuteNonQuery();
             connection.Close();
         }
 
         public void createUser(string username, string pw)
         {
             connection.Open();
-            NpgsqlCommand cmd2 = new NpgsqlCommand("insert into Persons (username, password) values('"+username+"', '"+pw+"')", connection);
+            NpgsqlCommand cmd2 = new NpgsqlCommand("insert into Persons (username, password) values('"+username+"', '"+pw+"');", connection);
             cmd2.ExecuteNonQuery();
             
             connection.Close();
@@ -63,17 +65,84 @@ namespace MCTG
                 //dataItems+=dataReader[0].ToString() + "," + dataReader[1].ToString() + "\r\n";
             }
             connection.Close();
+            
+            if (check)
+            {
+                connection.Open();
+                string sessionid = "Basic " + username + "-mtcgToken";
+                NpgsqlCommand cmd2 = new NpgsqlCommand("insert into sessions (SessionId, SessionTime) values('" + sessionid + "', '" + DateTime.Now + "');", connection);
+                cmd2.ExecuteNonQuery();
+                connection.Close();
+            }
             return check;
         }
 
-        public bool createCard(string Id, string Name, double Damage)
+        public bool createCard(string Id, string Name, double Damage, int pack)
         {
             connection.Open();
-            NpgsqlCommand cmd2 = new NpgsqlCommand("insert into cards (Id, Name, Damage) values('" + Id + "', '" + Name + "', '"+ Damage +"')", connection);
+            NpgsqlCommand cmd2 = new NpgsqlCommand("insert into cards (Id, Name, Damage, Pack) values('" + Id + "', '" + Name + "', '"+ Damage +"', '"+pack+"');", connection);
             cmd2.ExecuteNonQuery();
 
             connection.Close();
             return true;
+        }
+
+        public int getMaxPack()
+        {
+            connection.Open();
+            NpgsqlCommand command = new NpgsqlCommand("SELECT MAX(Pack) FROM cards;", connection);
+            NpgsqlDataReader dataReader = command.ExecuteReader();
+            int pack = 1;
+            try
+            {
+
+                for (int i = 0; dataReader.Read(); i++)
+                {
+                    if (dataReader[0].ToString() != "")
+                    {
+                        pack = int.Parse(dataReader[0].ToString()) + 1;
+                    }
+                    //dataItems+=dataReader[0].ToString() + "," + dataReader[1].ToString() + "\r\n";
+                }
+            }
+            catch { };
+            connection.Close();
+            return pack;
+        }
+
+        public bool checkSession(string sessionId)
+        {
+            bool check = false;
+            int zv = 0;
+            connection.Open();
+            NpgsqlCommand command = new NpgsqlCommand("SELECT SessionId, SessionTime FROM Sessions WHERE SessionId='" + sessionId + "';", connection);
+            NpgsqlDataReader dataReader = command.ExecuteReader();
+            for (int i = 0; dataReader.Read(); i++)
+            {
+                if (dataReader[0].ToString() == sessionId && DateTime.Now.Minute - DateTime.Parse(dataReader[1].ToString()).Minute < 2)
+                {
+                    check = true;
+                }
+                else if (dataReader[0].ToString() == sessionId && DateTime.Now.Minute - DateTime.Parse(dataReader[1].ToString()).Minute > 2)
+                {
+                    zv = 1;
+                }
+                //dataItems+=dataReader[0].ToString() + "," + dataReader[1].ToString() + "\r\n";
+            }
+            connection.Close();
+            connection.Open();
+            if (check)
+            {
+                NpgsqlCommand cmd = new NpgsqlCommand("UPDATE Sessions SET SessionTime = '"+DateTime.Now+"' WHERE SessionId='"+sessionId+"';", connection);
+                cmd.ExecuteNonQuery();
+            }
+            else if(zv == 1)
+            {
+                NpgsqlCommand cmd = new NpgsqlCommand("DELETE FROM Sessions WHERE SessionId='"+sessionId+"';", connection);
+                cmd.ExecuteNonQuery();
+            }
+            connection.Close();
+            return check;
         }
     }
 }

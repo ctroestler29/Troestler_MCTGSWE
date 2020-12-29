@@ -143,15 +143,24 @@ namespace MCTG
 
             if(directory== "packages")
             {
+                
                 user.Authorization = header.ElementAt(4).Value;
+                if(!db.checkSession(user.Authorization))
+                {
+                    statusCode = 600;
+                    statusPhrase = "No valid Session!";
+                    response = "Please Login again! Your Session expired!";
+                    return 1;
+                }
 
-                if(user.Authorization != "Basic admin-mtcgToken")
+                if (user.Authorization != "Basic admin-mtcgToken")
                 {
                     statusCode = 700;
                     statusPhrase = "No Admin!";
                     response = "Only admins are allowed to create packages!";
                     return 1;
                 }
+                int pack = db.getMaxPack();
                 JObject json;
                 string[] arr = msg.Split("},");
                 for (int i = 0; i < arr.Length-1; i++)
@@ -160,12 +169,13 @@ namespace MCTG
                     arr[i] = arr[i].Replace("[", "");
                     arr[i] = arr[i].Replace("]", "");
                     json = JObject.Parse(arr[i]);
-                    db.createCard(json.SelectToken("Id").ToString(), json.SelectToken("Name").ToString(), double.Parse(json.SelectToken("Damage").ToString()));
+                    db.createCard(json.SelectToken("Id").ToString(), json.SelectToken("Name").ToString(), double.Parse(json.SelectToken("Damage").ToString()),pack);
                 }
 
 
 
             }
+
             //if (msg.Length == 0)
             //{
             //    NoContent();
