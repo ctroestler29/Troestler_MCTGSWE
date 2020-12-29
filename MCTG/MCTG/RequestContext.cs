@@ -124,7 +124,7 @@ namespace MCTG
                 string username = json.SelectToken("Username").ToString();
                 string pw = json.SelectToken("Password").ToString();
 
-                if(db.Login(username, pw))
+                if(db.Login(username, pw)==0)
                 {
                     statusCode = 200;
                     statusPhrase = "Ok";
@@ -132,7 +132,14 @@ namespace MCTG
                     user.username = username;
                     return 0;
                 }
-                else
+                else if (db.Login(username, pw) == 1)
+                {
+                    statusCode = 800;
+                    statusPhrase = "Already Loggedin!";
+                    response = "User with Username: " + username + " is already Loggedin!";
+                    return 1;
+                }
+                else if (db.Login(username, pw) == 2)
                 {
                     statusCode = 800;
                     statusPhrase = "Wrong Username/password";
@@ -173,6 +180,25 @@ namespace MCTG
                 }
 
 
+
+            }
+
+            if(directory=="transactions")
+            {
+                user.Authorization = header.ElementAt(4).Value;
+                if (!db.checkSession(user.Authorization))
+                {
+                    statusCode = 600;
+                    statusPhrase = "No valid Session!";
+                    response = "Please Login again! Your Session expired!";
+                    return 1;
+                }
+
+                db.getPack(user.Authorization);
+                statusCode = 600;
+                statusPhrase = "Pack geöffnet!";
+                response = "Pack um 10 Coins geöffnet!";
+                return 0;
 
             }
 

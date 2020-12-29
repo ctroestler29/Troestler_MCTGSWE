@@ -14,33 +14,31 @@ namespace MCTG
         public void createTables()
         {
             connection.Open();
-            //NpgsqlCommand cmd = new NpgsqlCommand("CREATE TABLE cards ( Id varchar(255), Name varchar(255), Damage NUMERIC(5,2), Pack INTEGER);", connection);
+            //NpgsqlCommand cmd = new NpgsqlCommand("CREATE TABLE UserCards ( Id int PRIMARY KEY, username varchar(255) NOT NULL, cardsId varchar(255) NOT NULL);", connection);
             //cmd.ExecuteNonQuery();
-            //NpgsqlCommand cmd2 = new NpgsqlCommand("CREATE TABLE sessions ( SessionId varchar(255), SessionTime time); ", connection);
+            //NpgsqlCommand cmd2 = new NpgsqlCommand("ALTER TABLE sessions ADD userId varchar(255);", connection);
             //cmd2.ExecuteNonQuery();
-            //NpgsqlCommand cmd = new NpgsqlCommand("DELETE FROM cards;", connection);
-            //cmd.ExecuteNonQuery();
             connection.Close();
         }
 
         public void createUser(string username, string pw)
         {
             connection.Open();
-            NpgsqlCommand cmd2 = new NpgsqlCommand("insert into Persons (username, password) values('"+username+"', '"+pw+"');", connection);
+            NpgsqlCommand cmd2 = new NpgsqlCommand("insert into Persons (username, password, coins) values('" + username + "', '" + pw + "',40);", connection);
             cmd2.ExecuteNonQuery();
-            
+
             connection.Close();
         }
 
         public bool checkUser(string username)
         {
-            bool check=true;
+            bool check = true;
             connection.Open();
             NpgsqlCommand command = new NpgsqlCommand("SELECT username FROM Persons;", connection);
             NpgsqlDataReader dataReader = command.ExecuteReader();
             for (int i = 0; dataReader.Read(); i++)
             {
-                if (dataReader[0].ToString()==username)
+                if (dataReader[0].ToString() == username)
                 {
                     check = false;
                 }
@@ -50,27 +48,32 @@ namespace MCTG
             return check;
         }
 
-        public bool Login(string username, string pw)
+        public int Login(string username, string pw)
         {
-            bool check = false;
+            string sessionid = "Basic " + username + "-mtcgToken";
+            int check = 2;
             connection.Open();
-            NpgsqlCommand command = new NpgsqlCommand("SELECT username, password FROM Persons WHERE username='"+username+"';", connection);
+            NpgsqlCommand command = new NpgsqlCommand("SELECT username, password FROM Persons WHERE username='" + username + "';", connection);
             NpgsqlDataReader dataReader = command.ExecuteReader();
+
             for (int i = 0; dataReader.Read(); i++)
             {
                 if (dataReader[0].ToString() == username && dataReader[1].ToString() == pw)
                 {
-                    check = true;
+                    check = 0;
                 }
                 //dataItems+=dataReader[0].ToString() + "," + dataReader[1].ToString() + "\r\n";
             }
             connection.Close();
-            
-            if (check)
+            if (checkSession(sessionid) && check == 0)
+            {
+                return 1;
+            }
+
+            if (check == 0)
             {
                 connection.Open();
-                string sessionid = "Basic " + username + "-mtcgToken";
-                NpgsqlCommand cmd2 = new NpgsqlCommand("insert into sessions (SessionId, SessionTime) values('" + sessionid + "', '" + DateTime.Now + "');", connection);
+                NpgsqlCommand cmd2 = new NpgsqlCommand("insert into sessions (SessionId, SessionTime, userId) values('" + sessionid + "', '" + DateTime.Now + "', '" + username + "');", connection);
                 cmd2.ExecuteNonQuery();
                 connection.Close();
             }
@@ -80,7 +83,7 @@ namespace MCTG
         public bool createCard(string Id, string Name, double Damage, int pack)
         {
             connection.Open();
-            NpgsqlCommand cmd2 = new NpgsqlCommand("insert into cards (Id, Name, Damage, Pack) values('" + Id + "', '" + Name + "', '"+ Damage +"', '"+pack+"');", connection);
+            NpgsqlCommand cmd2 = new NpgsqlCommand("insert into cards (Id, Name, Damage, Pack) values('" + Id + "', '" + Name + "', '" + Damage + "', '" + pack + "');", connection);
             cmd2.ExecuteNonQuery();
 
             connection.Close();
@@ -119,13 +122,27 @@ namespace MCTG
             NpgsqlDataReader dataReader = command.ExecuteReader();
             for (int i = 0; dataReader.Read(); i++)
             {
-                if (dataReader[0].ToString() == sessionId && DateTime.Now.Minute - DateTime.Parse(dataReader[1].ToString()).Minute < 2)
+                if (DateTime.Now.Hour == DateTime.Parse(dataReader[1].ToString()).Hour)
                 {
-                    check = true;
+                    if (dataReader[0].ToString() == sessionId && DateTime.Now.Minute - DateTime.Parse(dataReader[1].ToString()).Minute < 2)
+                    {
+                        check = true;
+                    }
+                    else if (dataReader[0].ToString() == sessionId && DateTime.Now.Minute - DateTime.Parse(dataReader[1].ToString()).Minute > 2)
+                    {
+                        zv = 1;
+                    }
                 }
-                else if (dataReader[0].ToString() == sessionId && DateTime.Now.Minute - DateTime.Parse(dataReader[1].ToString()).Minute > 2)
+                else
                 {
-                    zv = 1;
+                    if (dataReader[0].ToString() == sessionId && (DateTime.Now.Minute + 60) - DateTime.Parse(dataReader[1].ToString()).Minute < 2)
+                    {
+                        check = true;
+                    }
+                    else if (dataReader[0].ToString() == sessionId && (DateTime.Now.Minute + 60) - DateTime.Parse(dataReader[1].ToString()).Minute > 2)
+                    {
+                        zv = 1;
+                    }
                 }
                 //dataItems+=dataReader[0].ToString() + "," + dataReader[1].ToString() + "\r\n";
             }
@@ -133,16 +150,61 @@ namespace MCTG
             connection.Open();
             if (check)
             {
-                NpgsqlCommand cmd = new NpgsqlCommand("UPDATE Sessions SET SessionTime = '"+DateTime.Now+"' WHERE SessionId='"+sessionId+"';", connection);
+                NpgsqlCommand cmd = new NpgsqlCommand("UPDATE Sessions SET SessionTime = '" + DateTime.Now + "' WHERE SessionId='" + sessionId + "';", connection);
                 cmd.ExecuteNonQuery();
             }
-            else if(zv == 1)
+            else if (zv == 1)
             {
-                NpgsqlCommand cmd = new NpgsqlCommand("DELETE FROM Sessions WHERE SessionId='"+sessionId+"';", connection);
+                NpgsqlCommand cmd = new NpgsqlCommand("DELETE FROM Sessions WHERE SessionId='" + sessionId + "';", connection);
                 cmd.ExecuteNonQuery();
             }
             connection.Close();
             return check;
+        }
+
+        public bool getPack(string sessionId)
+        {
+            //Username holen
+            connection.Open();
+            NpgsqlCommand cmd = new NpgsqlCommand("Select userId FROM sessions WHERE sessionid='" + sessionId + "';", connection);
+            NpgsqlDataReader dataReader = cmd.ExecuteReader();
+            string username = "";
+
+            for (int i = 0; dataReader.Read(); i++)
+            {
+                username = dataReader[0].ToString();
+                //dataItems+=dataReader[0].ToString() + "," + dataReader[1].ToString() + "\r\n";
+            }
+
+            connection.Close();
+            //Random PAck generieren
+            int maxPack = getMaxPack();
+            Random rnd = new Random();
+            int pack = rnd.Next(1, maxPack);
+
+            //Karten des PAcks holen
+            connection.Open();
+            cmd = new NpgsqlCommand("Select id FROM cards WHERE pack='" + pack + "';", connection);
+            dataReader = cmd.ExecuteReader();
+            List<string> cardID = new List<string>();
+            for (int i = 0; dataReader.Read(); i++)
+            {
+                cardID.Add(dataReader[0].ToString());
+                //dataItems+=dataReader[0].ToString() + "," + dataReader[1].ToString() + "\r\n";
+            }
+            connection.Close();
+
+            //Karten dem User übertragen
+            connection.Open();
+            for (int i = 0; i < cardID.Count; i++)
+            {
+                NpgsqlCommand cmd2 = new NpgsqlCommand("insert into usercards (username, cardsid) values('" + username + "', '" + cardID[i] + "');", connection);
+                cmd2.ExecuteNonQuery();
+            }
+
+            connection.Close();
+            return true;
+
         }
     }
 }
