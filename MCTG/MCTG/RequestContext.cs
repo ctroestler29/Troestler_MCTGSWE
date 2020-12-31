@@ -94,7 +94,7 @@ namespace MCTG
 
         public int POST(string path, string msg)
         {
-            
+            user.Authorization = header.ElementAt(4).Value;
             if (directory=="users")
             {
                 JObject json = JObject.Parse(msg);
@@ -150,8 +150,6 @@ namespace MCTG
 
             if(directory== "packages")
             {
-                
-                user.Authorization = header.ElementAt(4).Value;
                 if(!db.checkSession(user.Authorization))
                 {
                     statusCode = 600;
@@ -168,11 +166,16 @@ namespace MCTG
                     return 1;
                 }
                 int pack = db.getMaxPack();
+                db.createPack(pack);
+                
                 JObject json;
                 string[] arr = msg.Split("},");
-                for (int i = 0; i < arr.Length-1; i++)
+                for (int i = 0; i < arr.Length; i++)
                 {
-                    arr[i] += "}";
+                    if (i != arr.Length-1)
+                    {
+                        arr[i] += "}";
+                    }
                     arr[i] = arr[i].Replace("[", "");
                     arr[i] = arr[i].Replace("]", "");
                     json = JObject.Parse(arr[i]);
@@ -185,7 +188,7 @@ namespace MCTG
 
             if(directory=="transactions")
             {
-                user.Authorization = header.ElementAt(4).Value;
+                string username = db.GetUsernameBySessionID(user.Authorization);
                 if (!db.checkSession(user.Authorization))
                 {
                     statusCode = 600;
@@ -193,12 +196,31 @@ namespace MCTG
                     response = "Please Login again! Your Session expired!";
                     return 1;
                 }
+                int coins = db.GetCoins(username);
+                if (coins<5)
+                {
+                    statusCode = 400;
+                    statusPhrase = "Zu wenig Coins!";
+                    response = "Pack konte nicht geöffent werden! Kostet 5 Coins! Kontostand: "+coins;
+                    return 1;
+                }
 
-                db.getPack(user.Authorization);
-                statusCode = 600;
-                statusPhrase = "Pack geöffnet!";
-                response = "Pack um 10 Coins geöffnet!";
-                return 0;
+                if (db.getPack(username))
+                {
+                    coins -= 5;
+                    statusCode = 600;
+                    statusPhrase = "Pack geöffnet!";
+                    response = "Pack um 5 Coins geöffnet! Neuer Kontostand: "+coins;
+                    db.bezahlen(username,coins);
+                    return 0;
+                }
+                else
+                {
+                    statusCode = 500;
+                    statusPhrase = "Kein Pack verfügbar!";
+                    response = "Zur Zeit ist kein Pack verfügbar! Bitte versuchen Sie es später erneut!";
+                    return 1;
+                }
 
             }
 
@@ -243,68 +265,171 @@ namespace MCTG
 
         public int GET(string path)
         {
-            if (!Directory.Exists(path))
+            try
             {
-                DirNotFound();
-                return 1;
+                user.Authorization = header.ElementAt(3).Value;
             }
-
-            if (msgID.Length < 1)
+            catch { };
+            string username = db.GetUsernameBySessionID(user.Authorization);
+            if (directory=="cards")
             {
-                int i = ListAllMsg(path);
-                return i;
+                if (!db.checkSession(user.Authorization)|| user.Authorization==null)
+                {
+                    statusCode = 600;
+                    statusPhrase = "No valid Session!";
+                    response = "Your SessionID expired or is wrong! Please Login";
+                    return 1;
+                }
 
-            }
-            path = Path.Combine(path, msgID.ToString());
-            if (File.Exists(path))
-            {
-                //txt = File.ReadAllText(path);
+                List<string> strarr = db.GetCards(username);
+
+                int i = 0;
+                while (i < strarr.Count())
+                {
+                    JObject json = JObject.Parse(strarr[i]);
+                    response += "Card-ID: " + json.SelectToken("Id").ToString() + ":\n";
+                    response += " {\n";
+                    response += "   Name: " + json.SelectToken("Name").ToString() + "\n";
+                    response += "   Damage: " + json.SelectToken("Damage").ToString() + "\n";
+                    response += " }\n";
+                    i++;
+                }
                 statusCode = 200;
                 statusPhrase = "OK";
-                response += Path.GetFileName(path);
-                response += "\n{";
-                response += File.ReadAllText(path);
-                response += "}\n";
+                return 0;
 
             }
-            else
+
+            if(directory=="deck")
             {
-                FileNotFound();
+                if (!db.checkSession(user.Authorization)|| user.Authorization==null)
+                {
+                    statusCode = 600;
+                    statusPhrase = "No valid Session!";
+                    response = "Your SessionID expired or is wrong! Please Login";
+                    return 1;
+                }
+
+                List<string> deck = db.showDeck(username);
+
+                if(deck.Count==0)
+                {
+                    statusCode = 300;
+                    statusPhrase = "Deck unconfigured!";
+                    response = "Your Deck is empty! Please configure your Deck!";
+                    return 1;
+                }
+
+                int i = 0;
+                while (i < deck.Count())
+                {
+                    JObject json = JObject.Parse(deck[i]);
+                    response += "Card-ID: " + json.SelectToken("Id").ToString() + ":\n";
+                    response += " {\n";
+                    response += "   Name: " + json.SelectToken("Name").ToString() + "\n";
+                    response += "   Damage: " + json.SelectToken("Damage").ToString() + "\n";
+                    response += " }\n";
+                    i++;
+                }
+                statusCode = 200;
+                statusPhrase = "OK";
+                return 0;
             }
-            return 0;
+            return 1;
+
+            //if (!Directory.Exists(path))
+            //{
+            //    DirNotFound();
+            //    return 1;
+            //}
+
+            //if (msgID.Length < 1)
+            //{
+            //    int i = ListAllMsg(path);
+            //    return i;
+
+            //}
+            //path = Path.Combine(path, msgID.ToString());
+            //if (File.Exists(path))
+            //{
+            //    //txt = File.ReadAllText(path);
+            //    statusCode = 200;
+            //    statusPhrase = "OK";
+            //    response += Path.GetFileName(path);
+            //    response += "\n{";
+            //    response += File.ReadAllText(path);
+            //    response += "}\n";
+
+            //}
+            //else
+            //{
+            //    FileNotFound();
+            //}
+            //return 0;
         }
 
         public int PUT(string path, string msg)
         {
-            if (msg.Length == 0)
+            try
             {
-                NoContent();
-                return 1;
+                user.Authorization = header.ElementAt(4).Value;
+            }
+            catch { };
+
+            string username = db.GetUsernameBySessionID(user.Authorization);
+
+            if (directory=="deck")
+            {
+                if (!db.checkSession(user.Authorization) || user.Authorization == null)
+                {
+                    statusCode = 600;
+                    statusPhrase = "No valid Session!";
+                    response = "Your SessionID expired or is wrong! Please Login";
+                    return 1;
+                }
+                msg = msg.Replace("[", "");
+                msg = msg.Replace("]", "");
+                msg = msg.Replace(@"\", "");
+                msg = msg.Replace('"', ' ');
+                msg = msg.Replace(" ", "");
+
+                string[] strarr = msg.Split(",");
+                
+                for (int i = 0; i < strarr.Length; i++)
+                {
+                    db.setDeck(username,strarr[i].ToString(),i);
+                }
             }
 
-            if (!Directory.Exists(path))
-            {
-                DirNotFound();
-                return 1;
-            }
+            //if (msg.Length == 0)
+            //{
+            //    NoContent();
+            //    return 1;
+            //}
 
-            if (msgID.ToString().Length < 1)
-            {
-                NoFileID();
-                return 1;
-            }
-            path = Path.Combine(path, msgID.ToString());
-            if (File.Exists(path))
-            {
-                File.WriteAllText(path, msg);
-                statusCode = 200;
-                statusPhrase = "OK";
-                response = "File with ID: " + msgID + " successfully updated";
-            }
-            else
-            {
-                FileNotFound();
-            }
+            //if (!Directory.Exists(path))
+            //{
+            //    DirNotFound();
+            //    return 1;
+            //}
+
+            //if (msgID.ToString().Length < 1)
+            //{
+            //    NoFileID();
+            //    return 1;
+            //}
+            //path = Path.Combine(path, msgID.ToString());
+            //if (File.Exists(path))
+            //{
+            //    File.WriteAllText(path, msg);
+            //    statusCode = 200;
+            //    statusPhrase = "OK";
+            //    response = "File with ID: " + msgID + " successfully updated";
+            //}
+            //else
+            //{
+            //    FileNotFound();
+            //}
             return 0;
         }
 
