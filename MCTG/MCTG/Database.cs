@@ -17,7 +17,7 @@ namespace MCTG
             connection.Open();
             //NpgsqlCommand cmd = new NpgsqlCommand("CREATE TABLE UserCards ( Id int PRIMARY KEY, username varchar(255) NOT NULL, cardsId varchar(255) NOT NULL);", connection);
             //cmd.ExecuteNonQuery();
-            //NpgsqlCommand cmd2 = new NpgsqlCommand("ALTER TABLE persons ADD Name varchar(255)", connection);
+            //NpgsqlCommand cmd2 = new NpgsqlCommand("ALTER TABLE persons ADD ELO Integer", connection);
             //cmd2.ExecuteNonQuery();
             connection.Close();
         }
@@ -25,7 +25,7 @@ namespace MCTG
         public void createUser(string username, string pw)
         {
             connection.Open();
-            NpgsqlCommand cmd2 = new NpgsqlCommand("insert into Persons (username, password, coins) values('" + username + "', '" + pw + "',20);", connection);
+            NpgsqlCommand cmd2 = new NpgsqlCommand("insert into Persons (username, password, coins, gewonnen, verloren, ELO) values('" + username + "', '" + pw + "',20, 0, 0, 100);", connection);
             cmd2.ExecuteNonQuery();
 
             connection.Close();
@@ -427,6 +427,45 @@ namespace MCTG
             connection.Close();
 
             return true;
+        }
+
+        public string getStats(string username)
+        {
+            string stats = "";
+            connection.Open();
+            NpgsqlCommand cmd4 = new NpgsqlCommand("Select gewonnen, verloren, ELO FROM persons WHERE username = '" + username + "';", connection);
+            NpgsqlDataReader dataReader2 = cmd4.ExecuteReader();
+
+            for (int ii = 0; dataReader2.Read(); ii++)
+            {
+
+                stats = @"{  'Username': '" + username + "', 'Gewonnen': '" + dataReader2[0].ToString() + "', 'Verloren': '" + dataReader2[1].ToString() + "', 'ELO': '" + dataReader2[2].ToString() + "'} ";
+
+            }
+
+            connection.Close();
+            return stats;
+        }
+
+        public List<string> getScoreboard(string username)
+        {
+            int platz=0;
+            List<string> scoreboard = new List<string>();
+            connection.Open();
+            NpgsqlCommand cmd4 = new NpgsqlCommand("Select username, ELO FROM persons ORDER BY ELO ASC;", connection);
+            NpgsqlDataReader dataReader2 = cmd4.ExecuteReader();
+
+            for (int ii = 0; dataReader2.Read(); ii++)
+            {
+                if(dataReader2[0].ToString()==username)
+                {
+                    platz = ii + 1;
+                }
+                scoreboard.Insert(ii, @"{'Platz': '" + (ii+1).ToString() + "',  'Username': '" + dataReader2[0].ToString() + "', 'ELO': '" + dataReader2[1].ToString() + "', 'UserPlatz': '" + platz.ToString() + "'} ");
+
+            }
+            connection.Close();
+            return scoreboard;
         }
     }
 }

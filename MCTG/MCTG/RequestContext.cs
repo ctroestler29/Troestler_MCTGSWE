@@ -373,6 +373,72 @@ namespace MCTG
                 }
             }
 
+            if (directory == "stats")
+            {
+                if (!db.checkSession(user.Authorization))
+                {
+                    statusCode = 600;
+                    statusPhrase = "No valid Session!";
+                    response = "Please Login again! Your Session expired!";
+                    return 1;
+                }
+
+                string stats = db.getStats(username);
+
+                JObject json = JObject.Parse(stats);
+                response += "Username: " + json.SelectToken("Username").ToString() + "\n";
+                response += " {\n";
+                response += "   Gespielte Spiele: " + (int.Parse(json.SelectToken("Gewonnen").ToString()) + int.Parse(json.SelectToken("Verloren").ToString())) + "\n";
+                response += "       Gewonnene Spiele: " + json.SelectToken("Gewonnen").ToString() + "\n";
+                response += "       Verlorene Spiele: " + json.SelectToken("Verloren").ToString() + "\n";
+                response += "   ELO-Value: " + json.SelectToken("ELO").ToString() + "\n";
+                response += " }\n";
+                statusCode = 200;
+                statusPhrase = "OK";
+                return 0;
+            }
+
+            if (directory == "score")
+            {
+                if (!db.checkSession(user.Authorization))
+                {
+                    statusCode = 600;
+                    statusPhrase = "No valid Session!";
+                    response = "Please Login again! Your Session expired!";
+                    return 1;
+                }
+
+                List<string> scoreboard = db.getScoreboard(username);
+
+                int i = 0;
+                while (i < scoreboard.Count())
+                {
+                    JObject json = JObject.Parse(scoreboard[i]);
+                    if (json.SelectToken("UserPlatz").ToString() != "0")
+                    {
+                        response += "Deine Platzierung: " + json.SelectToken("UserPlatz").ToString() + ":\n";
+                        response += "\n";
+                        break;
+                    }
+                    i++;
+                }
+                i = 0;
+                while (i < scoreboard.Count())
+                {
+                    JObject json = JObject.Parse(scoreboard[i]);
+                    
+                    response += "Platzierung: " + json.SelectToken("Platz").ToString() + "\n";
+                    response += " {\n";
+                    response += "   Username: " + json.SelectToken("Username").ToString() + "\n";
+                    response += "   ELO-Value: " + json.SelectToken("ELO").ToString() + "\n";
+                    response += " }\n";
+                    i++;
+                }
+                statusCode = 200;
+                statusPhrase = "OK";
+                return 0;
+            }
+
             return 1;
 
             //if (!Directory.Exists(path))
