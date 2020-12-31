@@ -95,7 +95,7 @@ namespace MCTG
         public int POST(string path, string msg)
         {
             user.Authorization = header.ElementAt(4).Value;
-            if (directory=="users")
+            if (directory == "users")
             {
                 JObject json = JObject.Parse(msg);
                 string username = json.SelectToken("Username").ToString();
@@ -118,13 +118,13 @@ namespace MCTG
                 }
             }
 
-            if(directory== "sessions")
+            if (directory == "sessions")
             {
                 JObject json = JObject.Parse(msg);
                 string username = json.SelectToken("Username").ToString();
                 string pw = json.SelectToken("Password").ToString();
 
-                if(db.Login(username, pw)==0)
+                if (db.Login(username, pw) == 0)
                 {
                     statusCode = 200;
                     statusPhrase = "Ok";
@@ -148,9 +148,9 @@ namespace MCTG
                 }
             }
 
-            if(directory== "packages")
+            if (directory == "packages")
             {
-                if(!db.checkSession(user.Authorization))
+                if (!db.checkSession(user.Authorization))
                 {
                     statusCode = 600;
                     statusPhrase = "No valid Session!";
@@ -167,26 +167,26 @@ namespace MCTG
                 }
                 int pack = db.getMaxPack();
                 db.createPack(pack);
-                
+
                 JObject json;
                 string[] arr = msg.Split("},");
                 for (int i = 0; i < arr.Length; i++)
                 {
-                    if (i != arr.Length-1)
+                    if (i != arr.Length - 1)
                     {
                         arr[i] += "}";
                     }
                     arr[i] = arr[i].Replace("[", "");
                     arr[i] = arr[i].Replace("]", "");
                     json = JObject.Parse(arr[i]);
-                    db.createCard(json.SelectToken("Id").ToString(), json.SelectToken("Name").ToString(), double.Parse(json.SelectToken("Damage").ToString()),pack);
+                    db.createCard(json.SelectToken("Id").ToString(), json.SelectToken("Name").ToString(), double.Parse(json.SelectToken("Damage").ToString()), pack);
                 }
 
 
 
             }
 
-            if(directory=="transactions")
+            if (directory == "transactions")
             {
                 string username = db.GetUsernameBySessionID(user.Authorization);
                 if (!db.checkSession(user.Authorization))
@@ -197,11 +197,11 @@ namespace MCTG
                     return 1;
                 }
                 int coins = db.GetCoins(username);
-                if (coins<5)
+                if (coins < 5)
                 {
                     statusCode = 400;
                     statusPhrase = "Zu wenig Coins!";
-                    response = "Pack konte nicht geöffent werden! Kostet 5 Coins! Kontostand: "+coins;
+                    response = "Pack konte nicht geöffent werden! Kostet 5 Coins! Kontostand: " + coins;
                     return 1;
                 }
 
@@ -210,8 +210,8 @@ namespace MCTG
                     coins -= 5;
                     statusCode = 600;
                     statusPhrase = "Pack geöffnet!";
-                    response = "Pack um 5 Coins geöffnet! Neuer Kontostand: "+coins;
-                    db.bezahlen(username,coins);
+                    response = "Pack um 5 Coins geöffnet! Neuer Kontostand: " + coins;
+                    db.bezahlen(username, coins);
                     return 0;
                 }
                 else
@@ -223,6 +223,8 @@ namespace MCTG
                 }
 
             }
+
+
 
             //if (msg.Length == 0)
             //{
@@ -271,9 +273,9 @@ namespace MCTG
             }
             catch { };
             string username = db.GetUsernameBySessionID(user.Authorization);
-            if (directory=="cards")
+            if (directory == "cards")
             {
-                if (!db.checkSession(user.Authorization)|| user.Authorization==null)
+                if (!db.checkSession(user.Authorization) || user.Authorization == null)
                 {
                     statusCode = 600;
                     statusPhrase = "No valid Session!";
@@ -300,9 +302,9 @@ namespace MCTG
 
             }
 
-            if(directory=="deck")
+            if (directory == "deck")
             {
-                if (!db.checkSession(user.Authorization)|| user.Authorization==null)
+                if (!db.checkSession(user.Authorization) || user.Authorization == null)
                 {
                     statusCode = 600;
                     statusPhrase = "No valid Session!";
@@ -312,11 +314,11 @@ namespace MCTG
 
                 List<string> deck = db.showDeck(username);
 
-                if(deck.Count==0)
+                if (deck.Count == 0)
                 {
                     statusCode = 300;
                     statusPhrase = "Deck unconfigured!";
-                    response = "Your Deck is empty! Please configure your Deck!";
+                    response = "Your Deck is empty! Please configure your Deck! (4 Cards)";
                     return 1;
                 }
 
@@ -335,6 +337,42 @@ namespace MCTG
                 statusPhrase = "OK";
                 return 0;
             }
+
+            if (directory == "users")
+            {
+                username = msgID;
+                if (!db.checkSession(user.Authorization))
+                {
+                    statusCode = 600;
+                    statusPhrase = "No valid Session!";
+                    response = "Please Login again! Your Session expired!";
+                    return 1;
+                }
+                if (username == db.GetUsernameBySessionID(user.Authorization))
+                {
+                    string UserData = db.getUserData(username);
+
+                    JObject json = JObject.Parse(UserData);
+                    response += "Username: " + json.SelectToken("Username").ToString() + "\n";
+                    response += " {\n";
+                    response += "   Name: " + json.SelectToken("Name").ToString() + "\n";
+                    response += "   Bio: " + json.SelectToken("Bio").ToString() + "\n";
+                    response += "   Image: " + json.SelectToken("Image").ToString() + "\n";
+                    response += "   Coins: " + json.SelectToken("Coins").ToString() + "\n";
+                    response += " }\n";
+                    statusCode = 200;
+                    statusPhrase = "OK";
+                    return 0;
+                }
+                else
+                {
+                    statusCode = 1000;
+                    statusPhrase = "Not your Username!";
+                    response = "Cant access user data from another User!";
+                    return 1;
+                }
+            }
+
             return 1;
 
             //if (!Directory.Exists(path))
@@ -378,7 +416,7 @@ namespace MCTG
 
             string username = db.GetUsernameBySessionID(user.Authorization);
 
-            if (directory=="deck")
+            if (directory == "deck")
             {
                 if (!db.checkSession(user.Authorization) || user.Authorization == null)
                 {
@@ -394,11 +432,60 @@ namespace MCTG
                 msg = msg.Replace(" ", "");
 
                 string[] strarr = msg.Split(",");
-                
+
                 for (int i = 0; i < strarr.Length; i++)
                 {
-                    db.setDeck(username,strarr[i].ToString(),i);
+                    if (!db.setDeck(username, strarr[i].ToString(), i, strarr.Length))
+                    {
+                        statusCode = 900;
+                        statusPhrase = "Not a valid Deck!";
+                        response = "Please use 4 cards of your Card-Collection!";
+                        return 1;
+                    }
                 }
+            }
+
+
+            if (directory == "users")
+            {
+                string uname = msgID;
+                if (!db.checkSession(user.Authorization))
+                {
+                    statusCode = 600;
+                    statusPhrase = "No valid Session!";
+                    response = "Please Login again! Your Session expired!";
+                    return 1;
+                }
+                if (uname == db.GetUsernameBySessionID(user.Authorization))
+                {
+                    JObject json = JObject.Parse(msg);
+                    string name = json.SelectToken("Name").ToString();
+                    string bio = json.SelectToken("Bio").ToString();
+                    string image = json.SelectToken("Image").ToString();
+
+                    if (db.setUserData(uname, name, bio, image))
+                    {
+                        statusCode = 200;
+                        statusPhrase = "OK";
+                        response = "User Data updated!";
+                        return 0;
+                    }
+                    else
+                    {
+                        statusCode = 300;
+                        statusPhrase = "No valid UserData";
+                        response = "Please try again. The UserData was invalid!";
+                        return 1;
+                    }
+                }
+                else
+                {
+                    statusCode = 1000;
+                    statusPhrase = "Not your Username!";
+                    response = "Cant access user data from another User!";
+                    return 1;
+                }
+
             }
 
             //if (msg.Length == 0)

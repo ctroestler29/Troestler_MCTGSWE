@@ -9,6 +9,7 @@ namespace MCTG
     {
         public static string connstring = "Server=127.0.0.1;Port=5432;Database=MCTGData;User Id=postgres;Password=postgres;";
         NpgsqlConnection connection = new NpgsqlConnection(connstring);
+        List<string> OldDeck = new List<string>();
         //string dataItems = "";
 
         public void createTables()
@@ -16,7 +17,7 @@ namespace MCTG
             connection.Open();
             //NpgsqlCommand cmd = new NpgsqlCommand("CREATE TABLE UserCards ( Id int PRIMARY KEY, username varchar(255) NOT NULL, cardsId varchar(255) NOT NULL);", connection);
             //cmd.ExecuteNonQuery();
-            //NpgsqlCommand cmd2 = new NpgsqlCommand("ALTER TABLE usercards ADD imDeck boolean NOT NULL DEFAULT false;", connection);
+            //NpgsqlCommand cmd2 = new NpgsqlCommand("ALTER TABLE persons ADD Name varchar(255)", connection);
             //cmd2.ExecuteNonQuery();
             connection.Close();
         }
@@ -347,10 +348,22 @@ namespace MCTG
             return Deck;
         }
 
-        public bool setDeck(string username, string id, int i)
+        public bool setDeck(string username, string id, int i, int anz)
         {
+            
             if (i == 0)
             {
+                connection.Open();
+                NpgsqlCommand cmd3 = new NpgsqlCommand("Select cardsid FROM usercards WHERE username ='"+username+"' AND imDeck='true';", connection);
+                NpgsqlDataReader dataReader3 = cmd3.ExecuteReader();
+
+                for (int ii = 0; dataReader3.Read(); ii++)
+                {
+                    OldDeck.Insert(ii,dataReader3[0].ToString());
+                }
+
+                connection.Close();
+
                 connection.Open();
                 NpgsqlCommand cmd = new NpgsqlCommand("UPDATE usercards SET imDeck = 'false' WHERE username = '" + username + "';", connection);
                 cmd.ExecuteNonQuery();
@@ -360,6 +373,59 @@ namespace MCTG
             NpgsqlCommand cmd2 = new NpgsqlCommand("UPDATE usercards SET imDeck = 'true' WHERE username = '" + username + "' AND cardsid='" + id + "';", connection);
             cmd2.ExecuteNonQuery();
             connection.Close();
+
+            if (i == anz-1)
+            {
+                List<string> NewDeck = new List<string>();
+                connection.Open();
+                NpgsqlCommand cmd4 = new NpgsqlCommand("Select cardsid FROM usercards WHERE username = '" + username + "' AND imDeck='true';", connection);
+                NpgsqlDataReader dataReader4 = cmd4.ExecuteReader();
+
+                for (int ii = 0; dataReader4.Read(); ii++)
+                {
+                    NewDeck.Insert(ii, dataReader4[0].ToString());
+                }
+
+                connection.Close();
+
+                if (NewDeck.Count != 4)
+                {
+                    for (int ii = 0; ii < OldDeck.Count; ii++)
+                    {
+                        setDeck(username, OldDeck[ii].ToString(), ii, OldDeck.Count);
+                    }
+                    OldDeck.Clear();
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public string getUserData(string username)
+        {
+            string UserData = "";
+            connection.Open();
+            NpgsqlCommand cmd4 = new NpgsqlCommand("Select Name, Bio, Image, coins FROM persons WHERE username = '" + username + "';", connection);
+            NpgsqlDataReader dataReader2 = cmd4.ExecuteReader();
+
+            for (int ii = 0; dataReader2.Read(); ii++)
+            {
+                
+                UserData= @"{  'Username': '" + username + "', 'Name': '" + dataReader2[0].ToString() + "', 'Bio': '" + dataReader2[1].ToString() + "', 'Image': '" + dataReader2[2].ToString() + "', 'Coins': '" + dataReader2[3].ToString() + "'} ";
+
+            }
+
+            connection.Close();
+            return UserData;
+        }
+
+        public bool setUserData(string username, string name, string bio, string image)
+        {
+            connection.Open();
+            NpgsqlCommand cmd = new NpgsqlCommand("UPDATE persons SET Name = '" + name + "', bio = '" + bio + "', image = '" + image + "' WHERE username='" + username + "';", connection);
+            cmd.ExecuteNonQuery();
+            connection.Close();
+
             return true;
         }
     }
