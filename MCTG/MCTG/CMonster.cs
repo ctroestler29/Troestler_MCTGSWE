@@ -4,28 +4,26 @@ using System.Text;
 
 namespace MCTG
 {
-    class CMonster : ICard
+    class CMonster
     {
-        public CMonster(string _name, string _element, int _damage, string _type, string _cardtype, int _health)
+        public CMonster(string _name, string _element, double _damage, string _type, string _cardtype)
         {
             Name = _name;
             Element = _element;
             Damage = _damage;
-            type = _type;
+            Type = _type;
             CardType = _cardtype;
-            Health = _health;
         }
-
+        public string ID { get; set; }
         public string Name { get; set; }
         public string Element { get; set; }
-        public int Health { get; set; }
-        public int Damage { get; set; }
-        public string type { get; set; }
+        public double Damage { get; set; }
+        public string Type { get; set; }
         public string CardType { get; set; }
 
         public void attack()
         {
-            Console.WriteLine(Name + " der " + type + " hat " + Damage + " Schaden gemacht");
+            Console.WriteLine(Name + " der " + Type + " hat " + Damage + " Schaden gemacht");
         }
 
         public bool isActive()

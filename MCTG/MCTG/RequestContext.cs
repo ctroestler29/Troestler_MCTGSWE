@@ -9,7 +9,7 @@ namespace MCTG
 {
     class RequestContext
     {
-        User user = new User();
+        User user = new User("");
         Database db = new Database();
         public string http_verb;
         public IDictionary<string, string> header;
@@ -94,7 +94,11 @@ namespace MCTG
 
         public int POST(string path, string msg)
         {
-            user.Authorization = header.ElementAt(4).Value;
+            try
+            {
+                user.Authorization = header.ElementAt(4).Value;
+            }
+            catch { };
             if (directory == "users")
             {
                 JObject json = JObject.Parse(msg);
@@ -179,7 +183,36 @@ namespace MCTG
                     arr[i] = arr[i].Replace("[", "");
                     arr[i] = arr[i].Replace("]", "");
                     json = JObject.Parse(arr[i]);
-                    db.createCard(json.SelectToken("Id").ToString(), json.SelectToken("Name").ToString(), double.Parse(json.SelectToken("Damage").ToString()), pack);
+                    string element = "";
+                    string type = "";
+                    string cardtype = "";
+
+                    if(json.SelectToken("Name").ToString().Contains("Spell"))
+                    {
+                        cardtype = "spell";
+                        element = json.SelectToken("Name").ToString().Replace("Spell", "");
+                    }
+                    else
+                    {
+                        cardtype = "monster";
+
+                        if(json.SelectToken("Name").ToString().Contains("Fire"))
+                        {
+                            element = "Fire";
+                            type = json.SelectToken("Name").ToString().Replace("Fire", "");
+                        }
+                        else if(json.SelectToken("Name").ToString().Contains("Water"))
+                        {
+                            element = "Water";
+                            type = json.SelectToken("Name").ToString().Replace("Water", "");
+                        }
+                        else
+                        {
+                            element = "Regular";
+                            type = json.SelectToken("Name").ToString();
+                        }
+                    }
+                    db.createCard(json.SelectToken("Id").ToString(), json.SelectToken("Name").ToString(), double.Parse(json.SelectToken("Damage").ToString()),element,type, cardtype, pack);
                 }
 
 
@@ -224,6 +257,95 @@ namespace MCTG
 
             }
 
+            if(directory=="battles")
+            {
+                
+                user.Authorization = header.ElementAt(3).Value;
+                string username = db.GetUsernameBySessionID(user.Authorization);
+                if (!db.checkSession(user.Authorization))
+                {
+                    statusCode = 600;
+                    statusPhrase = "No valid Session!";
+                    response = "Please Login again! Your Session expired!";
+                    return 1;
+                }
+
+                if(db.showDeck(username).Count!=4)
+                {
+                    statusCode = 999;
+                    statusPhrase = "No valid Deck!";
+                    response = "Before entering the Arena you need 4 Cards in your Deck!";
+                    return 1;
+                }
+
+                string oponent = db.findBattle(username);
+                if (oponent!="")
+                {
+                    statusCode = 200;
+                    statusPhrase = "Ok";
+                    response = "Oponent found!";
+                    User user1 = new User(username);
+                    User user2 = new User(oponent);
+
+                    List<string> deck1 = db.showDeck(user1.username);
+                    List<string> deck2 = db.showDeck(user2.username);
+
+                    List<ICard> IDeck1 = new List<ICard>();
+                    List<ICard> IDeck2 = new List<ICard>();
+                    
+                    int i = 0;
+                    while (i < deck1.Count())
+                    {
+                        ICard card = new ICard();
+                        JObject json = JObject.Parse(deck1[i]);
+                        card.ID = json.SelectToken("Id").ToString();
+                        card.Name = json.SelectToken("Name").ToString();
+                        card.Damage = double.Parse(json.SelectToken("Damage").ToString());
+                        card.Element = json.SelectToken("Element").ToString();
+                        card.Type = json.SelectToken("Type").ToString();
+                        card.CardType = json.SelectToken("CardType").ToString();
+                        IDeck1.Add(card);
+                        i++;
+                    }
+
+                    
+                    int ii = 0;
+                    while (ii < deck2.Count())
+                    {
+                        ICard card2 = new ICard();
+                        JObject json = JObject.Parse(deck2[ii]);
+                        card2.ID = json.SelectToken("Id").ToString();
+                        card2.Name = json.SelectToken("Name").ToString();
+                        card2.Damage = double.Parse(json.SelectToken("Damage").ToString());
+                        card2.Element = json.SelectToken("Element").ToString();
+                        card2.Type = json.SelectToken("Type").ToString();
+                        card2.CardType = json.SelectToken("CardType").ToString();
+                        IDeck2.Add(card2);
+                        ii++;
+                    }
+
+                    user1.deck = IDeck1;
+                    user2.deck = IDeck2;
+                    user1.battleID = db.getBattleID(user1.username, user2.username);
+                    user2.battleID = db.getBattleID(user1.username, user2.username);
+
+                    Arena arena = new Arena(user1, user2);
+
+                    string log = arena.StartBattle();
+                    response = log;
+                    db.endBattle(user1.battleID);
+                    return 0;
+                }
+                else
+                {
+                    statusCode = 1001;
+                    statusPhrase = "Already in a Game!";
+                    response = "User: "+username+" is already in a Game!";
+                    return 1;
+                }
+
+                
+            }
 
 
             //if (msg.Length == 0)

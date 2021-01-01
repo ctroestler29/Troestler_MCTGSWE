@@ -8,8 +8,10 @@ namespace MCTG
 {
     class HTTPServer
     {
+        
         public void Start()
         {
+
             RequestContext rc = new RequestContext();
             TcpListener listener = new TcpListener(IPAddress.Loopback, 10001);
             TcpClient clientSocket = default(TcpClient);
@@ -20,6 +22,8 @@ namespace MCTG
             Console.CancelKeyPress += (sender, e) => Environment.Exit(0);
             //String data = null;
             Byte[] bytes = new Byte[256];
+
+
             while (true)
             {
                 try

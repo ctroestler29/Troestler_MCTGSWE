@@ -14,71 +14,17 @@ namespace MCTG
         public string ClNo { get; set; }
         public string username { get; set; }
         public string password { get; set; }
+        public int battleID { get; set; }
         public string Authorization { get; set; }
         public List<ICard> stack = new List<ICard>();
         public int coins { get; set; }
         public List<ICard> deck = new List<ICard>();
 
 
-        public static void initClient()
+        public User(string _username)
         {
-            
-
-        }
-        public int register()
-        {
-            Console.WriteLine("Username: ");
-            username = Console.ReadLine();
-            Console.WriteLine("Password: ");
-            password = Console.ReadLine();
-            coins = 20;
-
-            return 0;
+            username = _username;
         }
 
-        public int login()
-        {
-            Console.WriteLine("Username: ");
-            username = Console.ReadLine();
-            Console.WriteLine("Password: ");
-            password = Console.ReadLine();
-
-            return 0;
-        }
-
-        public int findBattle()
-        {
-            return 0;
-        }
-
-        public int defineDeck()
-        {
-            return 0;
-        }
-
-        public int TradeCard(ICard card)
-        {
-            return 0;
-        }
-
-        public int Tradinglist()
-        {
-            return 0;
-        }
-
-        public void shop()
-        {
-            Random rnd = new Random();
-            int r = 0;
-            CardCollection cc = new CardCollection();
-            cc.fill();
-
-            for (int i = 0; i <= 4; i++)
-            {
-                r = rnd.Next(0, cc.collec.Count() - 1);
-                deck.Add(cc.collec[r]);
-            }
-            coins -= 5;
-        }
     }
 }

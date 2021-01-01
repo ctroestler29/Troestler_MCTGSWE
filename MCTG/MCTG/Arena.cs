@@ -7,6 +7,8 @@ namespace MCTG
 {
     class Arena
     {
+        Database db = new Database();
+
         User user1;
         User user2;
 
@@ -16,24 +18,28 @@ namespace MCTG
             user2 = _user2;
         }
 
-        public void StartBattle()
+        public string StartBattle()
         {
 
-
+            string log = "";
             Random rnd = new Random();
             ICard ActCardUser1;
             ICard ActCardUser2;
-
             int i = 0;
-            while (user1.deck.Count() > 0 && user2.deck.Count() > 0 && i <= 100)
+            while (user1.deck.Count() > 0 && user2.deck.Count() > 0 && i <= 10)
             {
-                Console.WriteLine(i + ". Runde");
-                Console.WriteLine("Anz1: " + user1.deck.Count());
-                Console.WriteLine("Anz2: " + user2.deck.Count());
-                Console.WriteLine();
+                log += i + ". Runde\n";
+                log += "Anz1: " + user1.deck.Count() + "\n";
+                log += "Anz2: " + user2.deck.Count() + "\n";
+                log += "\n\n";
 
-                ActCardUser1 = user1.deck[rnd.Next(0, user1.deck.Count())];
-                ActCardUser2 = user2.deck[rnd.Next(0, user2.deck.Count())];
+                int karteuser1 = rnd.Next(0, user1.deck.Count);
+                db.setCard(i,user1.username, karteuser1 ,user1.battleID);
+                
+                int karteuser2 = db.getCard(i,user2.username, user2.battleID);
+                
+                ActCardUser1 = user1.deck[karteuser1];
+                ActCardUser2 = user2.deck[karteuser2];
 
 
                 if (ActCardUser1.CardType == "monster" && ActCardUser2.CardType == "monster")
@@ -84,7 +90,7 @@ namespace MCTG
 
                     if (ActCardUser1.Name.Contains("Kraken") && ActCardUser2.CardType == "spell")
                     {
-                        if (ActCardUser2.Element == "fire")
+                        if (ActCardUser2.Element == "Fire")
                         {
                             ActCardUser2.Health -= ActCardUser1.Damage * 2;
                         }
@@ -96,7 +102,7 @@ namespace MCTG
                     }
                     else if (ActCardUser2.Name.Contains("Kraken") && ActCardUser1.CardType == "spell")
                     {
-                        if (ActCardUser1.Element == "fire")
+                        if (ActCardUser1.Element == "Fire")
                         {
                             ActCardUser1.Health -= ActCardUser2.Damage * 2;
                         }
@@ -107,12 +113,12 @@ namespace MCTG
                         zv = true;
                     }
 
-                    if (ActCardUser1.Name.Contains("Knight") && ActCardUser2.Element == "water")
+                    if (ActCardUser1.Name.Contains("Knight") && ActCardUser2.Element == "Water")
                     {
                         ActCardUser1.Health = 0;
                         zv = true;
                     }
-                    else if (ActCardUser2.Name.Contains("Knight") && ActCardUser1.Element == "water")
+                    else if (ActCardUser2.Name.Contains("Knight") && ActCardUser1.Element == "Water")
                     {
                         ActCardUser2.Health = 0;
                         zv = true;
@@ -121,34 +127,34 @@ namespace MCTG
                     if (zv == false)
                     {
                         //water-- > fire
-                        if (ActCardUser1.Element == "water" && ActCardUser2.Element == "fire")
+                        if (ActCardUser1.Element == "Water" && ActCardUser2.Element == "Fire")
                         {
                             ActCardUser2.Health -= ActCardUser1.Damage * 2;
                             ActCardUser1.Health -= ActCardUser2.Damage / 2;
                         }
-                        else if (ActCardUser2.Element == "water" && ActCardUser1.Element == "fire")
+                        else if (ActCardUser2.Element == "Water" && ActCardUser1.Element == "Fire")
                         {
                             ActCardUser1.Health -= ActCardUser2.Damage * 2;
                             ActCardUser2.Health -= ActCardUser1.Damage / 2;
                         }
                         //fire-- > normal
-                        if (ActCardUser1.Element == "fire" && ActCardUser2.Element == "normal")
+                        if (ActCardUser1.Element == "Fire" && ActCardUser2.Element == "Regular")
                         {
                             ActCardUser2.Health -= ActCardUser1.Damage * 2;
                             ActCardUser1.Health -= ActCardUser2.Damage / 2;
                         }
-                        else if (ActCardUser2.Element == "fire" && ActCardUser1.Element == "normal")
+                        else if (ActCardUser2.Element == "Fire" && ActCardUser1.Element == "Regular")
                         {
                             ActCardUser1.Health -= ActCardUser2.Damage * 2;
                             ActCardUser2.Health -= ActCardUser1.Damage / 2;
                         }
                         //normal-- > water
-                        if (ActCardUser1.Element == "normal" && ActCardUser2.Element == "water")
+                        if (ActCardUser1.Element == "Regular" && ActCardUser2.Element == "Water")
                         {
                             ActCardUser2.Health -= ActCardUser1.Damage * 2;
                             ActCardUser1.Health -= ActCardUser2.Damage / 2;
                         }
-                        else if (ActCardUser2.Element == "normal" && ActCardUser1.Element == "water")
+                        else if (ActCardUser2.Element == "Regular" && ActCardUser1.Element == "Water")
                         {
                             ActCardUser1.Health -= ActCardUser2.Damage * 2;
                             ActCardUser2.Health -= ActCardUser1.Damage / 2;
@@ -176,23 +182,25 @@ namespace MCTG
 
                 i++;
             }
-            Console.WriteLine(i + ". Runde");
-            Console.WriteLine("Anz1: " + user1.deck.Count());
-            Console.WriteLine("Anz2: " + user2.deck.Count());
-            Console.WriteLine();
-            Console.WriteLine("BATTLE END");
+            log += i + ". Runde\n";
+            log += "Anz1: " + user1.deck.Count() + "\n";
+            log += "Anz2: " + user2.deck.Count() + "\n";
+            log += "\n\n";
+            log += "BATTLE END\n";
             if (user1.deck.Count() > user2.deck.Count())
             {
-                Console.WriteLine(user1.username + " hat gewonnen!");
+                log += user1.username + " hat gewonnen!\n";
             }
             else if (user1.deck.Count() < user2.deck.Count())
             {
-                Console.WriteLine(user2.username + " hat gewonnen!");
+                log += user2.username + " hat gewonnen!\n";
             }
             else
             {
-                Console.WriteLine(user1.username + " vs " + user2.username + " endet im Unentschieden!");
+                log += user1.username + " vs " + user2.username + " endet im Unentschieden!\n";
             }
+
+            return log;
         }
     }
 }

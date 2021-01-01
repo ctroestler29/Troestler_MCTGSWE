@@ -9,7 +9,7 @@ namespace MCTG
     //Class to handle each client request separatly
     public class HandleClient
     {
-        User user = new User();
+        User user = new User("");
         RequestContext rc = new RequestContext();
         public void startClient(TcpClient inClientSocket, string clineNo)
         {

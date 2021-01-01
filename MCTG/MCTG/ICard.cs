@@ -4,15 +4,15 @@ using System.Text;
 
 namespace MCTG
 {
-    public interface ICard
+    public class ICard
     {
-        string Name { get; set; }
-        string Element { get; set; }
-        int Damage { get; set; }
-        string CardType { get; set; }
-        int Health { get; set; }
-        void attack();
-        bool isActive();
+        public string ID { get; set; }
+        public string Name { get; set; }
+        public string Element { get; set; }
+        public double Damage { get; set; }
+        public string CardType { get; set; }
+        public string Type { get; set; }
+        public double Health = 1000;
 
     }
 }
