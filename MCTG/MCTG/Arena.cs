@@ -56,12 +56,12 @@ namespace MCTG
                         zv = true;
                     }
 
-                    if (ActCardUser1.Name.Contains("Wizzard") && ActCardUser2.Name.Contains("Orks"))
+                    if (ActCardUser1.Name.Contains("Wizzard") && ActCardUser2.Name.Contains("Ork"))
                     {
                         ActCardUser2.Health -= ActCardUser1.Damage;
                         zv = true;
                     }
-                    else if (ActCardUser2.Name.Contains("Wizzard") && ActCardUser1.Name.Contains("Orks"))
+                    else if (ActCardUser2.Name.Contains("Wizzard") && ActCardUser1.Name.Contains("Ork"))
                     {
                         ActCardUser1.Health -= ActCardUser2.Damage;
                         zv = true;
@@ -90,7 +90,7 @@ namespace MCTG
 
                     if (ActCardUser1.Name.Contains("Kraken") && ActCardUser2.CardType == "spell")
                     {
-                        if (ActCardUser2.Element == "Fire")
+                        if (ActCardUser1.Element=="Water" && ActCardUser2.Element == "Fire")
                         {
                             ActCardUser2.Health -= ActCardUser1.Damage * 2;
                         }
