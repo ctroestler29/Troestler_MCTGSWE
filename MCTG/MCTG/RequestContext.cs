@@ -278,62 +278,26 @@ namespace MCTG
                     return 1;
                 }
 
-                string oponent = db.findBattle(username);
-                if (oponent!="")
+                string log = db.findBattle(username);
+               
+                if(log=="")
+                {
+                    log = db.getFightResponse(username);
+                    int battleid = db.getBattleID(username);
+                    db.endBattle(username, battleid);
+                }
+                else
+                {
+                    db.endBattle(username, 0);
+                }
+
+                if (log!="")
                 {
                     statusCode = 200;
                     statusPhrase = "Ok";
-                    response = "Oponent found!";
-                    User user1 = new User(username);
-                    User user2 = new User(oponent);
-
-                    List<string> deck1 = db.showDeck(user1.username);
-                    List<string> deck2 = db.showDeck(user2.username);
-
-                    List<ICard> IDeck1 = new List<ICard>();
-                    List<ICard> IDeck2 = new List<ICard>();
-                    
-                    int i = 0;
-                    while (i < deck1.Count())
-                    {
-                        ICard card = new ICard();
-                        JObject json = JObject.Parse(deck1[i]);
-                        card.ID = json.SelectToken("Id").ToString();
-                        card.Name = json.SelectToken("Name").ToString();
-                        card.Damage = double.Parse(json.SelectToken("Damage").ToString());
-                        card.Element = json.SelectToken("Element").ToString();
-                        card.Type = json.SelectToken("Type").ToString();
-                        card.CardType = json.SelectToken("CardType").ToString();
-                        IDeck1.Add(card);
-                        i++;
-                    }
-
-                    
-                    int ii = 0;
-                    while (ii < deck2.Count())
-                    {
-                        ICard card2 = new ICard();
-                        JObject json = JObject.Parse(deck2[ii]);
-                        card2.ID = json.SelectToken("Id").ToString();
-                        card2.Name = json.SelectToken("Name").ToString();
-                        card2.Damage = double.Parse(json.SelectToken("Damage").ToString());
-                        card2.Element = json.SelectToken("Element").ToString();
-                        card2.Type = json.SelectToken("Type").ToString();
-                        card2.CardType = json.SelectToken("CardType").ToString();
-                        IDeck2.Add(card2);
-                        ii++;
-                    }
-
-                    user1.deck = IDeck1;
-                    user2.deck = IDeck2;
-                    user1.battleID = db.getBattleID(user1.username, user2.username);
-                    user2.battleID = db.getBattleID(user1.username, user2.username);
-
-                    Arena arena = new Arena(user1, user2);
-
-                    string log = arena.StartBattle();
                     response = log;
-                    db.endBattle(user1.battleID);
+                    //File.Delete(hv2);
+                    
                     return 0;
                 }
                 else
@@ -346,43 +310,6 @@ namespace MCTG
 
                 
             }
-
-
-            //if (msg.Length == 0)
-            //{
-            //    NoContent();
-            //    return 1;
-            //}
-
-            //if (!Directory.Exists(path))
-            //{
-            //    DirNotFound();
-            //    return 1;
-            //}
-
-            //if (msgID.Length > 0)
-            //{
-            //    DontUseFileID();
-            //    return 1;
-            //}
-
-            //int i = 1;
-            //string hv2;
-            //while (true)
-            //{
-            //    hv2 = path + @"\" + i;
-            //    if (!File.Exists(hv2))
-            //    {
-            //        break;
-            //    }
-            //    i++;
-            //}
-
-            //File.WriteAllText(hv2, msg);
-            //statusCode = 200;
-            //statusPhrase = "OK";
-            //response = "File with ID: " + i + " successfully created";
-            //msgID = i.ToString();
 
             return 0;
         }
@@ -563,35 +490,6 @@ namespace MCTG
 
             return 1;
 
-            //if (!Directory.Exists(path))
-            //{
-            //    DirNotFound();
-            //    return 1;
-            //}
-
-            //if (msgID.Length < 1)
-            //{
-            //    int i = ListAllMsg(path);
-            //    return i;
-
-            //}
-            //path = Path.Combine(path, msgID.ToString());
-            //if (File.Exists(path))
-            //{
-            //    //txt = File.ReadAllText(path);
-            //    statusCode = 200;
-            //    statusPhrase = "OK";
-            //    response += Path.GetFileName(path);
-            //    response += "\n{";
-            //    response += File.ReadAllText(path);
-            //    response += "}\n";
-
-            //}
-            //else
-            //{
-            //    FileNotFound();
-            //}
-            //return 0;
         }
 
         public int PUT(string path, string msg)
@@ -676,35 +574,6 @@ namespace MCTG
 
             }
 
-            //if (msg.Length == 0)
-            //{
-            //    NoContent();
-            //    return 1;
-            //}
-
-            //if (!Directory.Exists(path))
-            //{
-            //    DirNotFound();
-            //    return 1;
-            //}
-
-            //if (msgID.ToString().Length < 1)
-            //{
-            //    NoFileID();
-            //    return 1;
-            //}
-            //path = Path.Combine(path, msgID.ToString());
-            //if (File.Exists(path))
-            //{
-            //    File.WriteAllText(path, msg);
-            //    statusCode = 200;
-            //    statusPhrase = "OK";
-            //    response = "File with ID: " + msgID + " successfully updated";
-            //}
-            //else
-            //{
-            //    FileNotFound();
-            //}
             return 0;
         }
 

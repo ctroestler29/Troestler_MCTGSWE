@@ -17,6 +17,9 @@ namespace MCTG
             user.ClNo = clineNo;
             Thread ctThread = new Thread(doChat);
             ctThread.Start();
+            Console.WriteLine("TEST");
+            //arena.ArenaList
+            
         }
         private void doChat()
         {
