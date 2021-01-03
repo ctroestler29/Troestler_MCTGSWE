@@ -17,12 +17,12 @@ namespace MCTG
         public void createTables()
         {
             connection.Open();
-            //NpgsqlCommand cmd = new NpgsqlCommand("CREATE TABLE Kampfzüge ( Id int PRIMARY KEY NOT NULL, Runde int NOT NULL, username varchar(255) NOT NULL, Karte int NOT NULL, BattelID int NOT NULL);", connection);
+            //NpgsqlCommand cmd = new NpgsqlCommand("CREATE TABLE Offers ( Id integer PRIMARY KEY NOT NULL, username varchar(255) NOT NULL, CardToTrade varchar(255) NOT NULL);", connection);
             //cmd.ExecuteNonQuery();
             //NpgsqlCommand cmd = new NpgsqlCommand("DROP TABLE Kampfzüge;", connection);
             //cmd.ExecuteNonQuery();
-            //NpgsqlCommand cmd2 = new NpgsqlCommand("ALTER TABLE persons ADD draw int", connection);
-            //cmd2.ExecuteNonQuery();
+            NpgsqlCommand cmd2 = new NpgsqlCommand("ALTER TABLE offers ADD TradeId varchar(255) NOT NULL", connection);
+            cmd2.ExecuteNonQuery();
             connection.Close();
         }
 
@@ -695,7 +695,7 @@ namespace MCTG
             {
                 try
                 {
-                    score.Insert(ii, dataReader2[0].ToString() + ";" + dataReader2[1].ToString() + ";" + dataReader2[2].ToString() + ";" + dataReader2[3].ToString()+";"+dataReader2[4].ToString());
+                    score.Insert(ii, dataReader2[0].ToString() + ";" + dataReader2[1].ToString() + ";" + dataReader2[2].ToString() + ";" + dataReader2[3].ToString() + ";" + dataReader2[4].ToString());
                 }
                 catch { };
             }
@@ -707,7 +707,7 @@ namespace MCTG
                 if (winner != "" && strarr[0] == winner)
                 {
                     connection.Open();
-                    NpgsqlCommand cmd = new NpgsqlCommand("UPDATE persons SET gewonnen = '" + (int.Parse(strarr[1]) + 1) + "', elo ='"+ (int.Parse(strarr[4])+3) +"' WHERE username='" + winner + "';", connection);
+                    NpgsqlCommand cmd = new NpgsqlCommand("UPDATE persons SET gewonnen = '" + (int.Parse(strarr[1]) + 1) + "', elo ='" + (int.Parse(strarr[4]) + 3) + "' WHERE username='" + winner + "';", connection);
                     cmd.ExecuteNonQuery();
                     connection.Close();
                 }
@@ -730,6 +730,174 @@ namespace MCTG
                 i++;
             }
             return check;
+        }
+
+        public List<string> getTradingDeals(string username)
+        {
+            List<string> deals = new List<string>();
+
+            connection.Open();
+            NpgsqlCommand cmd2 = new NpgsqlCommand("Select Id, username, CardToTrade FROM tradinglist ORDER BY Id DESC;", connection);
+            NpgsqlDataReader dataReader2 = cmd2.ExecuteReader();
+
+            for (int ii = 0; dataReader2.Read(); ii++)
+            {
+                if (dataReader2[1].ToString() != username)
+                {
+                    deals.Add(@"{  'Id': '" + dataReader2[0].ToString() + "', 'Username': '" + dataReader2[1].ToString() + "','CardToTrade': '" + dataReader2[2].ToString() + "'} ");
+                }
+            }
+            connection.Close();
+
+            return deals;
+        }
+
+        public string getCardById(string id)
+        {
+            string card = "";
+
+            connection.Open();
+            NpgsqlCommand cmd2 = new NpgsqlCommand("Select id, name, cardtype ,  damage FROM cards WHERE id='" + id + "';", connection);
+            NpgsqlDataReader dataReader2 = cmd2.ExecuteReader();
+
+            for (int ii = 0; dataReader2.Read(); ii++)
+            {
+                //CardList.Insert(ii,"{\"Id\":\"" + dataReader2[0].ToString() + ", \"Name\":\"" + dataReader2[1].ToString() + ", \"Damage\":" + dataReader2[2].ToString() + "}");
+                card = @"{  'Id': '" + dataReader2[0].ToString() + "', 'Name': '" + dataReader2[1].ToString() + "','cardtype': '" + dataReader2[2].ToString() + "', 'Damage': '" + dataReader2[3].ToString() + "'} ";
+                //dataItems+=dataReader[0].ToString() + "," + dataReader[1].ToString() + "\r\n";
+            }
+
+            connection.Close();
+
+
+            return card;
+        }
+
+        public string getCardbyTradeId(string id)
+        {
+            string card = "";
+            string cardid = "";
+            connection.Open();
+            NpgsqlCommand cmd2 = new NpgsqlCommand("Select CardToTrade FROM Tradinglist WHERE id='" + id + "';", connection);
+            NpgsqlDataReader dataReader2 = cmd2.ExecuteReader();
+
+            for (int ii = 0; dataReader2.Read(); ii++)
+            {
+                cardid = dataReader2[0].ToString();
+            }
+
+            connection.Close();
+
+            card = getCardById(cardid);
+
+            return card;
+        }
+
+        public bool createTrade(string id, string username, string cardtotrade, string type, double damage)
+        {
+
+            try
+            {
+                connection.Open();
+                NpgsqlCommand cmd2 = new NpgsqlCommand("insert into tradinglist (id, username, CardToTrade, type, minimumdamage) values('" + id + "', '" + username + "','" + cardtotrade + "', '" + type + "', '" + damage + "');", connection);
+                cmd2.ExecuteNonQuery();
+
+                connection.Close();
+            }
+            catch { return false; };
+            return true;
+        }
+
+        public string getTradeCondition(string tradeid)
+        {
+            string condition = "";
+            connection.Open();
+            NpgsqlCommand cmd2 = new NpgsqlCommand("Select type, minimumdamage FROM Tradinglist WHERE id='" + tradeid + "';", connection);
+            NpgsqlDataReader dataReader2 = cmd2.ExecuteReader();
+
+            for (int ii = 0; dataReader2.Read(); ii++)
+            {
+                condition = @"{  'type': '" + dataReader2[0].ToString() + "', 'MinDamage': '" + dataReader2[1].ToString() + "'} ";
+            }
+
+            connection.Close();
+
+            return condition;
+        }
+
+        public bool makeTrade(string tradeid, string offerid, string username)
+        {
+            try
+            {
+                string username1 = "";
+                string usertrade = "";
+                connection.Open();
+                NpgsqlCommand cmd2 = new NpgsqlCommand("Select id, username FROM usercards WHERE cardsid='" + tradeid + "';", connection);
+                NpgsqlDataReader dataReader2 = cmd2.ExecuteReader();
+
+                for (int ii = 0; dataReader2.Read(); ii++)
+                {
+                    usertrade = dataReader2[0].ToString();
+                    username1 = dataReader2[1].ToString();
+                }
+
+                connection.Close();
+
+                string username2 = "";
+                string useroffer = "";
+                connection.Open();
+                NpgsqlCommand cmd3 = new NpgsqlCommand("Select id, username FROM usercards WHERE cardsid='" + offerid + "';", connection);
+                NpgsqlDataReader dataReader3 = cmd3.ExecuteReader();
+
+                for (int ii = 0; dataReader3.Read(); ii++)
+                {
+                    useroffer = dataReader3[0].ToString();
+                    username2 = dataReader3[1].ToString();
+                }
+
+                connection.Close();
+                if (username2 != username)
+                {
+                    return false;
+                }
+                else if (username1 == username2)
+                {
+                    return false;
+                }
+                else
+                {
+                    connection.Open();
+                    NpgsqlCommand cmd = new NpgsqlCommand("UPDATE usercards SET cardsid = '" + tradeid + "' WHERE id='" + useroffer + "';", connection);
+                    cmd.ExecuteNonQuery();
+                    connection.Close();
+
+                    connection.Open();
+                    NpgsqlCommand cmd4 = new NpgsqlCommand("UPDATE usercards SET cardsid = '" + offerid + "' WHERE id='" + usertrade + "';", connection);
+                    cmd4.ExecuteNonQuery();
+                    connection.Close();
+
+                    connection.Open();
+                    NpgsqlCommand cmd5 = new NpgsqlCommand("DELETE FROM tradinglist WHERE cardtotrade = '"+tradeid+"';", connection);
+                    cmd5.ExecuteNonQuery();
+                    connection.Close();
+                }
+            }
+            catch { return false; };
+            return true;
+        }
+
+        public bool deleteTrade(string tradeid)
+        {
+            try
+            {
+                connection.Open();
+                NpgsqlCommand cmd5 = new NpgsqlCommand("DELETE FROM tradinglist WHERE id = '" + tradeid + "';", connection);
+                cmd5.ExecuteNonQuery();
+                connection.Close();
+            }
+            catch { return false; };
+
+            return true;
         }
     }
 }

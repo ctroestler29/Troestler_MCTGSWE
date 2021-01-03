@@ -187,7 +187,7 @@ namespace MCTG
                     string type = "";
                     string cardtype = "";
 
-                    if(json.SelectToken("Name").ToString().Contains("Spell"))
+                    if (json.SelectToken("Name").ToString().Contains("Spell"))
                     {
                         cardtype = "spell";
                         element = json.SelectToken("Name").ToString().Replace("Spell", "");
@@ -196,12 +196,12 @@ namespace MCTG
                     {
                         cardtype = "monster";
 
-                        if(json.SelectToken("Name").ToString().Contains("Fire"))
+                        if (json.SelectToken("Name").ToString().Contains("Fire"))
                         {
                             element = "Fire";
                             type = json.SelectToken("Name").ToString().Replace("Fire", "");
                         }
-                        else if(json.SelectToken("Name").ToString().Contains("Water"))
+                        else if (json.SelectToken("Name").ToString().Contains("Water"))
                         {
                             element = "Water";
                             type = json.SelectToken("Name").ToString().Replace("Water", "");
@@ -212,7 +212,7 @@ namespace MCTG
                             type = json.SelectToken("Name").ToString();
                         }
                     }
-                    db.createCard(json.SelectToken("Id").ToString(), json.SelectToken("Name").ToString(), double.Parse(json.SelectToken("Damage").ToString()),element,type, cardtype, pack);
+                    db.createCard(json.SelectToken("Id").ToString(), json.SelectToken("Name").ToString(), double.Parse(json.SelectToken("Damage").ToString()), element, type, cardtype, pack);
                 }
 
 
@@ -257,9 +257,9 @@ namespace MCTG
 
             }
 
-            if(directory=="battles")
+            if (directory == "battles")
             {
-                
+
                 user.Authorization = header.ElementAt(3).Value;
                 string username = db.GetUsernameBySessionID(user.Authorization);
                 if (!db.checkSession(user.Authorization))
@@ -270,7 +270,7 @@ namespace MCTG
                     return 1;
                 }
 
-                if(db.showDeck(username).Count!=4)
+                if (db.showDeck(username).Count != 4)
                 {
                     statusCode = 999;
                     statusPhrase = "No valid Deck!";
@@ -279,8 +279,8 @@ namespace MCTG
                 }
 
                 string log = db.findBattle(username);
-               
-                if(log=="")
+
+                if (log == "")
                 {
                     log = db.getFightResponse(username);
                     int battleid = db.getBattleID(username);
@@ -291,24 +291,105 @@ namespace MCTG
                     db.endBattle(username, 0);
                 }
 
-                if (log!="")
+                if (log != "")
                 {
                     statusCode = 200;
                     statusPhrase = "Ok";
                     response = log;
                     //File.Delete(hv2);
-                    
+
                     return 0;
                 }
                 else
                 {
                     statusCode = 1001;
                     statusPhrase = "Already in a Game!";
-                    response = "User: "+username+" is already in a Game!";
+                    response = "User: " + username + " is already in a Game!";
                     return 1;
                 }
 
-                
+
+            }
+
+            if (directory == "tradings")
+            {
+                string username = db.GetUsernameBySessionID(user.Authorization);
+                if (!db.checkSession(user.Authorization))
+                {
+                    statusCode = 600;
+                    statusPhrase = "No valid Session!";
+                    response = "Please Login again! Your Session expired!";
+                    return 1;
+                }
+
+                if (msgID == "")
+                {
+                    //Create trade
+                    JObject json = JObject.Parse(msg);
+                    bool check = db.createTrade(json.SelectToken("Id").ToString(), username, json.SelectToken("CardToTrade").ToString(), json.SelectToken("Type").ToString(), double.Parse(json.SelectToken("MinimumDamage").ToString()));
+                    if (check)
+                    {
+                        statusCode = 200;
+                        statusPhrase = "Ok";
+                        response = "Trade successfully created!";
+                        return 0;
+                    }
+                    else
+                    {
+                        statusCode = 9900;
+                        statusPhrase = "Trade already exists!";
+                        response = "Trade already exists!!";
+                        return 1;
+                    }
+                }
+                else
+                {
+                    //make Trade
+                    string tradeid = msgID;
+                    msg = msg.Replace(@"\", "");
+                    msg = msg.Replace('"', ' ');
+                    msg = msg.Replace(" ", "");
+                    string offercard = db.getCardById(msg);
+                    string tradecard = db.getCardbyTradeId(msgID);
+                    JObject offer = JObject.Parse(offercard);
+                    JObject trade = JObject.Parse(tradecard);
+                    string condition = db.getTradeCondition(tradeid);
+                    JObject con = JObject.Parse(condition);
+
+                    if (offer.SelectToken("cardtype").ToString() == con.SelectToken("type").ToString() && double.Parse(offer.SelectToken("Damage").ToString()) >= double.Parse(con.SelectToken("MinDamage").ToString()))
+                    {
+                        if (db.makeTrade(trade.SelectToken("Id").ToString(), offer.SelectToken("Id").ToString(), username))
+                        {
+                            statusCode = 200;
+                            statusPhrase = "Ok";
+                            response = "Trade successfully made!";
+                            return 0;
+                        }
+                        else
+                        {
+                            statusCode = 9999;
+                            statusPhrase = "Trade does not exists!";
+                            response = "Cant trade with yourself OR Trade does not exist!";
+                            return 1;
+                        }
+                    }
+                    else
+                    {
+                        statusCode = 9990;
+                        statusPhrase = "Offer was not accepted!";
+                        response += "\nOffer was not accepted!\n";
+                        response += "\nThe condition is a " + con.SelectToken("type").ToString() + " Card with min. " + con.SelectToken("MinDamage").ToString() + " Damage !!\n";
+                        return 1;
+                    }
+
+                    //response += "\n Card To Offer: " + offer.SelectToken("Id").ToString() + "\n";
+                    //response += "{\n";
+                    //response += "\t Name: " + offer.SelectToken("Name").ToString() + "\n";
+                    //response += "\t Type: " + offer.SelectToken("type").ToString() + "\n";
+                    //response += "\t Damage: " + offer.SelectToken("Damage").ToString() + "\n";
+                    //response += "}\n";
+
+                }
             }
 
             return 0;
@@ -475,7 +556,7 @@ namespace MCTG
                 while (i < scoreboard.Count())
                 {
                     JObject json = JObject.Parse(scoreboard[i]);
-                    
+
                     response += "Platzierung: " + json.SelectToken("Platz").ToString() + "\n";
                     response += " {\n";
                     response += "   Username: " + json.SelectToken("Username").ToString() + "\n";
@@ -486,6 +567,51 @@ namespace MCTG
                 statusCode = 200;
                 statusPhrase = "OK";
                 return 0;
+            }
+
+            if (directory == "tradings")
+            {
+                if (!db.checkSession(user.Authorization))
+                {
+                    statusCode = 600;
+                    statusPhrase = "No valid Session!";
+                    response = "Please Login again! Your Session expired!";
+                    return 1;
+                }
+
+                List<string> deals = db.getTradingDeals(username);
+
+                if (deals.Count == 0)
+                {
+                    statusCode = 8800;
+                    statusPhrase = "No Tradingdeals!";
+                    response = "User: " + username + " has no Tradingdeals!";
+                    return 1;
+                }
+                string tradecard = "";
+                int i = 0;
+                while (i < deals.Count)
+                {
+                    JObject json = JObject.Parse(deals[i]);
+                    tradecard = db.getCardbyTradeId(json.SelectToken("Id").ToString());
+                    JObject trade = JObject.Parse(tradecard);
+
+                    //if (response.Contains(trade.SelectToken("Id").ToString()))
+                    //{
+                    response += "\nTradinglist: \n";
+                    response += "\nCard To Trade: " + trade.SelectToken("Id").ToString() + "\n";
+                    response += "{\n";
+                    response += "\tName: " + trade.SelectToken("Name").ToString() + "\n";
+                    response += "\tType: " + trade.SelectToken("cardtype").ToString() + "\n";
+                    response += "\tDamage: " + trade.SelectToken("Damage").ToString() + "\n";
+                    response += "}\n";
+                    //}
+
+                    i++;
+                }
+
+                return 0;
+
             }
 
             return 1;
@@ -579,29 +705,63 @@ namespace MCTG
 
         public int DEL(string path)
         {
-            if (!Directory.Exists(path))
-            {
-                DirNotFound();
-                return 1;
-            }
 
-            if (msgID.ToString().Length < 1)
+            if(directory=="tradings")
             {
-                NoFileID();
-                return 1;
+                try
+                {
+                    user.Authorization = header.ElementAt(3).Value;
+                }
+                catch { };
+
+                string username = db.GetUsernameBySessionID(user.Authorization);
+
+                if (!db.checkSession(user.Authorization))
+                {
+                    statusCode = 600;
+                    statusPhrase = "No valid Session!";
+                    response = "Please Login again! Your Session expired!";
+                    return 1;
+                }
+
+                if(db.deleteTrade(msgID))
+                {
+                    statusCode = 200;
+                    statusPhrase = "Ok";
+                    response = "Trade successfully deleted!";
+                    return 0;
+                }
+                else
+                {
+                    statusCode = 8800;
+                    statusPhrase = "No Trade found!";
+                    response = "Trade does not exist!";
+                    return 1;
+                }
             }
-            path = Path.Combine(path, msgID.ToString());
-            if (File.Exists(path))
-            {
-                File.Delete(path);
-                statusCode = 200;
-                statusPhrase = "OK";
-                response = "File with ID: " + msgID + " successfully deleted";
-            }
-            else
-            {
-                FileNotFound();
-            }
+            //if (!Directory.Exists(path))
+            //{
+            //    DirNotFound();
+            //    return 1;
+            //}
+
+            //if (msgID.ToString().Length < 1)
+            //{
+            //    NoFileID();
+            //    return 1;
+            //}
+            //path = Path.Combine(path, msgID.ToString());
+            //if (File.Exists(path))
+            //{
+            //    File.Delete(path);
+            //    statusCode = 200;
+            //    statusPhrase = "OK";
+            //    response = "File with ID: " + msgID + " successfully deleted";
+            //}
+            //else
+            //{
+            //    FileNotFound();
+            //}
             return 0;
         }
 
