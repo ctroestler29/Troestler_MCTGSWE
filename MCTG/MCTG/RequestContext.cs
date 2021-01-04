@@ -279,24 +279,15 @@ namespace MCTG
                 }
 
                 string log = db.findBattle(username);
+                int battleid = db.getBattleID(username);
+                db.endBattle(username,battleid);
 
-                if (log == "")
-                {
-                    log = db.getFightResponse(username);
-                    int battleid = db.getBattleID(username);
-                    db.endBattle(username, battleid);
-                }
-                else
-                {
-                    db.endBattle(username, 0);
-                }
 
                 if (log != "")
                 {
                     statusCode = 200;
                     statusPhrase = "Ok";
                     response = log;
-                    //File.Delete(hv2);
 
                     return 0;
                 }
@@ -706,7 +697,7 @@ namespace MCTG
         public int DEL(string path)
         {
 
-            if(directory=="tradings")
+            if (directory == "tradings")
             {
                 try
                 {
@@ -724,7 +715,7 @@ namespace MCTG
                     return 1;
                 }
 
-                if(db.deleteTrade(msgID))
+                if (db.deleteTrade(msgID))
                 {
                     statusCode = 200;
                     statusPhrase = "Ok";

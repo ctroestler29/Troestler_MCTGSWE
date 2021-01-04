@@ -477,27 +477,33 @@ namespace MCTG
             List<string> warteschlange = new List<string>();
             string oponent = "";
             string response = "";
-
-            connection.Open();
-            NpgsqlCommand cmd2 = new NpgsqlCommand("insert into warteschlange (username) values('" + username + "');", connection);
-            cmd2.ExecuteNonQuery();
-            connection.Close();
-
             warteschlange = AnzWarteschlange(username);
-            if (AnzWarteschlange(username).Count == 0)
+            if (warteschlange.Count == 0)
             {
-                while (warteschlange.Count == 0)
-                {
-                    warteschlange = AnzWarteschlange(username);
-                    Console.WriteLine("Gegner für User: " + username + " wird gesucht .....");
-                }
-                oponent = warteschlange[0];
+                connection.Open();
+                NpgsqlCommand cmd2 = new NpgsqlCommand("insert into warteschlange (username) values('" + username + "');", connection);
+                cmd2.ExecuteNonQuery();
+                connection.Close();
+
+                Console.WriteLine("Gegner für User: " + username + " wird gesucht .....");
+
+                Arena.event_2.WaitOne();
+
 
             }
             else
             {
-                warteschlange = AnzWarteschlange(username);
                 oponent = warteschlange[0];
+                connection.Open();
+                NpgsqlCommand cmd4 = new NpgsqlCommand("DELETE FROM warteschlange WHERE username ='" + oponent + "';", connection);
+                cmd4.ExecuteNonQuery();
+                connection.Close();
+
+                int battleID = getBattleID(username);
+                connection.Open();
+                NpgsqlCommand cmd3 = new NpgsqlCommand("insert into arena (username1, username2, battleid) values('" + username + "', '" + oponent + "', '" + battleID + "');", connection);
+                cmd3.ExecuteNonQuery();
+                connection.Close();
 
                 User user1 = new User(username);
                 User user2 = new User(oponent);
@@ -505,82 +511,59 @@ namespace MCTG
                 List<string> deck1 = showDeck(user1.username);
                 List<string> deck2 = showDeck(user2.username);
 
-                List<ICard> IDeck1 = new List<ICard>();
-                List<ICard> IDeck2 = new List<ICard>();
-
-                int i = 0;
-                while (i < deck1.Count)
-                {
-                    ICard card = new ICard();
-                    JObject json = JObject.Parse(deck1[i]);
-                    card.ID = json.SelectToken("Id").ToString();
-                    card.Name = json.SelectToken("Name").ToString();
-                    card.Damage = double.Parse(json.SelectToken("Damage").ToString());
-                    card.Element = json.SelectToken("Element").ToString();
-                    card.Type = json.SelectToken("Type").ToString();
-                    card.CardType = json.SelectToken("CardType").ToString();
-                    IDeck1.Add(card);
-                    i++;
-                }
-
-
-                int ii = 0;
-                while (ii < deck2.Count)
-                {
-                    ICard card2 = new ICard();
-                    JObject json = JObject.Parse(deck2[ii]);
-                    card2.ID = json.SelectToken("Id").ToString();
-                    card2.Name = json.SelectToken("Name").ToString();
-                    card2.Damage = double.Parse(json.SelectToken("Damage").ToString());
-                    card2.Element = json.SelectToken("Element").ToString();
-                    card2.Type = json.SelectToken("Type").ToString();
-                    card2.CardType = json.SelectToken("CardType").ToString();
-                    IDeck2.Add(card2);
-                    ii++;
-                }
-
-                user1.deck = IDeck1;
-                user2.deck = IDeck2;
+                user1.deck = FillDeck(deck1);
+                user2.deck = FillDeck(deck2);
                 arena = new Arena(user1, user2);
                 response = arena.StartBattle();
 
+                //if (!Arena.PrepareFight(user1))
+                //{
+                //Arena.event_2.WaitOne();
+                //}
+
+                Arena.event_2.Set();
 
             }
 
-            //connection.Open();
-            //NpgsqlCommand cmd4 = new NpgsqlCommand("DELETE FROM warteschlange WHERE username ='" + warteschlange[0] + "';", connection);
-            //cmd4.ExecuteNonQuery();
-            //connection.Close();
-
-
-            if (response != "")
+            if (response == "")
             {
-                int battleID = getBattleID(username);
-                connection.Open();
-                NpgsqlCommand cmd3 = new NpgsqlCommand("insert into arena (username1, username2, battleid, response) values('" + username + "', '" + oponent + "', '" + battleID + "', '" + response + "');", connection);
-                cmd3.ExecuteNonQuery();
-                connection.Close();
+                int z = 0;
+                bool check = false;
+                while (z < Arena.result.Count)
+                {
+                    check = Arena.result[z].Contains(username);
+                    if (check == true)
+                    {
+                        response = Arena.result[z];
+                        Arena.result.RemoveAt(z);
+                        break;
+                    }
+                    z++;
+                }
             }
-
             return response;
         }
 
-        public string getFightResponse(string username)
+        public List<ICard> FillDeck(List<string> deck)
         {
-            string res = "";
-            while (res == "")
-            {
-                connection.Open();
-                NpgsqlCommand cmd4 = new NpgsqlCommand("Select response FROM arena WHERE username2 = '" + username + "';", connection);
-                NpgsqlDataReader dataReader2 = cmd4.ExecuteReader();
+            List<ICard> IDeck = new List<ICard>();
 
-                for (int ii = 0; dataReader2.Read(); ii++)
-                {
-                    res = dataReader2[0].ToString();
-                }
-                connection.Close();
+            int i = 0;
+            while (i < deck.Count)
+            {
+                ICard card = new ICard();
+                JObject json = JObject.Parse(deck[i]);
+                card.ID = json.SelectToken("Id").ToString();
+                card.Name = json.SelectToken("Name").ToString();
+                card.Damage = double.Parse(json.SelectToken("Damage").ToString());
+                card.Element = json.SelectToken("Element").ToString();
+                card.Type = json.SelectToken("Type").ToString();
+                card.CardType = json.SelectToken("CardType").ToString();
+                IDeck.Add(card);
+                i++;
             }
-            return res;
+
+            return IDeck;
         }
 
         public List<string> AnzWarteschlange(string username)
@@ -668,17 +651,10 @@ namespace MCTG
         public bool endBattle(string username, int battleid)
         {
             connection.Open();
-            NpgsqlCommand cmd5 = new NpgsqlCommand("DELETE FROM warteschlange WHERE username ='" + username + "';", connection);
-            cmd5.ExecuteNonQuery();
+            NpgsqlCommand cmd3 = new NpgsqlCommand("DELETE FROM arena WHERE battleid='" + battleid + "';", connection);
+            cmd3.ExecuteNonQuery();
             connection.Close();
 
-            if (battleid != 0)
-            {
-                connection.Open();
-                NpgsqlCommand cmd3 = new NpgsqlCommand("DELETE FROM arena WHERE battleid='" + battleid + "';", connection);
-                cmd3.ExecuteNonQuery();
-                connection.Close();
-            }
 
             return true;
         }
@@ -877,7 +853,7 @@ namespace MCTG
                     connection.Close();
 
                     connection.Open();
-                    NpgsqlCommand cmd5 = new NpgsqlCommand("DELETE FROM tradinglist WHERE cardtotrade = '"+tradeid+"';", connection);
+                    NpgsqlCommand cmd5 = new NpgsqlCommand("DELETE FROM tradinglist WHERE cardtotrade = '" + tradeid + "';", connection);
                     cmd5.ExecuteNonQuery();
                     connection.Close();
                 }

@@ -2,12 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 
 namespace MCTG
 {
     class Arena
     {
         Database db = new Database();
+        //public static List<User> warteschlange = new List<User>();
+        public static List<string> result = new List<string>();
         User user1;
         User user2;
 
@@ -17,9 +20,25 @@ namespace MCTG
             user2 = _user2;
         }
 
-        public string StartBattle()
-        {
+        public static ManualResetEvent Restart { get; } = new ManualResetEvent(false);
+        public static System.Threading.AutoResetEvent event_2 = new System.Threading.AutoResetEvent(false);
 
+        //public static bool PrepareFight(User user)
+        //{
+        //    bool check = false;
+        //    warteschlange.Add(user);
+        //    if (warteschlange.Count >= 2)
+        //    {
+        //        StartBattle(warteschlange[0], warteschlange[1]);
+        //        warteschlange.RemoveAt(1);
+        //        warteschlange.RemoveAt(0);
+        //        check = true;
+        //    }
+        //    return check;
+        //}
+
+        public  string StartBattle()
+        {
             string log = "";
             Random rnd = new Random();
             ICard ActCardUser1;
@@ -205,9 +224,9 @@ namespace MCTG
             {
                 log += user1.username + " vs " + user2.username + " endet im Unentschieden!\n";
             }
-
+            result.Add(log);
             db.setScore(winner, looser);
-
+            
             return log;
         }
 
