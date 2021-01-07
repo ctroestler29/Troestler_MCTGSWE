@@ -4,7 +4,7 @@ using System.Text;
 
 namespace MCTG
 {
-    public class ICard
+    public interface ICard
     {
         public string ID { get; set; }
         public string Name { get; set; }
@@ -12,7 +12,7 @@ namespace MCTG
         public double Damage { get; set; }
         public string CardType { get; set; }
         public string Type { get; set; }
-        public double Health = 1000;
+        public double Health { get; set; }
 
     }
 }

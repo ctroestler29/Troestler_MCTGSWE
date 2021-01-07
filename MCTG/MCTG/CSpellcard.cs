@@ -4,21 +4,21 @@ using System.Text;
 
 namespace MCTG
 {
-    class CSpellcard
+    class CSpellcard:ICard
     {
-        public CSpellcard(string _name, string _element, double _damage, string _cardtype, int _health)
+        public CSpellcard(string _name, string _element, double _damage, string _cardtype)
         {
             Name = _name;
             Element = _element;
             Damage = _damage;
             CardType = _cardtype;
-            Health = _health;
+            Health = 1000;
         }
 
         public string ID { get; set; }
         public string Name { get; set; }
         public string Element { get; set; }
-        public int Health { get; set; }
+        public double Health { get; set; }
         public double Damage { get; set; }
         public string CardType { get; set; }
         public string Type { get; set; }

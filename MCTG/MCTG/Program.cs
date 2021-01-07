@@ -13,10 +13,6 @@ namespace MCTG
             HTTPServer server = new HTTPServer();
             server.Start();
 
-            
-
-
-
 
 
             //User user1 = new User();
@@ -29,7 +25,6 @@ namespace MCTG
             //user2.shop();
             //Arena arena = new Arena(user1, user2);
             //arena.StartBattle();
-
             Console.ReadKey();
         }
     }

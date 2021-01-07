@@ -4,7 +4,7 @@ using System.Text;
 
 namespace MCTG
 {
-    class CMonster
+    class CMonster:ICard
     {
         public CMonster(string _name, string _element, double _damage, string _type, string _cardtype)
         {
@@ -13,6 +13,7 @@ namespace MCTG
             Damage = _damage;
             Type = _type;
             CardType = _cardtype;
+            Health = 1000;
         }
         public string ID { get; set; }
         public string Name { get; set; }
@@ -20,6 +21,7 @@ namespace MCTG
         public double Damage { get; set; }
         public string Type { get; set; }
         public string CardType { get; set; }
+        public double Health { get; set; }
 
         public void attack()
         {

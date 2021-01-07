@@ -7,7 +7,7 @@ using System.Text;
 
 namespace MCTG
 {
-    class RequestContext
+    public class RequestContext
     {
         User user = new User("");
         Database db = new Database();
@@ -244,7 +244,7 @@ namespace MCTG
                     statusCode = 600;
                     statusPhrase = "Pack geöffnet!";
                     response = "Pack um 5 Coins geöffnet! Neuer Kontostand: " + coins;
-                    db.bezahlen(username, coins);
+                    db.spendCoins(username, coins);
                     return 0;
                 }
                 else
@@ -278,9 +278,8 @@ namespace MCTG
                     return 1;
                 }
 
-                string log = db.findBattle(username);
-                int battleid = db.getBattleID(username);
-                db.endBattle(username,battleid);
+                string log = db.findBattleDB(username);
+                //string log = db.findBattleQueue(username);
 
 
                 if (log != "")
@@ -404,16 +403,15 @@ namespace MCTG
                     return 1;
                 }
 
-                List<string> strarr = db.GetCards(username);
+                List<ICard> stack = db.GetCards(username);
 
                 int i = 0;
-                while (i < strarr.Count())
+                while (i < stack.Count())
                 {
-                    JObject json = JObject.Parse(strarr[i]);
-                    response += "Card-ID: " + json.SelectToken("Id").ToString() + ":\n";
+                    response += "Card-ID: " + stack[i].ID + ":\n";
                     response += " {\n";
-                    response += "   Name: " + json.SelectToken("Name").ToString() + "\n";
-                    response += "   Damage: " + json.SelectToken("Damage").ToString() + "\n";
+                    response += "   Name: " + stack[i].Name + "\n";
+                    response += "   Damage: " + stack[i].Damage + "\n";
                     response += " }\n";
                     i++;
                 }
@@ -433,7 +431,7 @@ namespace MCTG
                     return 1;
                 }
 
-                List<string> deck = db.showDeck(username);
+                List<ICard> deck = db.showDeck(username);
 
                 if (deck.Count == 0)
                 {
@@ -446,11 +444,11 @@ namespace MCTG
                 int i = 0;
                 while (i < deck.Count())
                 {
-                    JObject json = JObject.Parse(deck[i]);
-                    response += "Card-ID: " + json.SelectToken("Id").ToString() + ":\n";
+                    //JObject json = JObject.Parse(deck[i]);
+                    response += "Card-ID: " + deck[i].ID + ":\n";
                     response += " {\n";
-                    response += "   Name: " + json.SelectToken("Name").ToString() + "\n";
-                    response += "   Damage: " + json.SelectToken("Damage").ToString() + "\n";
+                    response += "   Name: " + deck[i].Name + "\n";
+                    response += "   Damage: " + deck[i].Damage + "\n";
                     response += " }\n";
                     i++;
                 }

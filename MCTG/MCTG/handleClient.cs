@@ -15,13 +15,14 @@ namespace MCTG
         {
             user.Client = inClientSocket;
             user.ClNo = clineNo;
-            Thread ctThread = new Thread(doChat);
+            Thread ctThread = new Thread(StartGame);
             ctThread.Start();
+            
             Console.WriteLine("TEST");
             //arena.ArenaList
             
         }
-        private void doChat()
+        private void StartGame()
         {
             int requestCount = 0;
             byte[] bytesFrom = new byte[10025];

@@ -3,47 +3,91 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Collections.Concurrent;
 
 namespace MCTG
 {
-    class Arena
+    public class Arena
     {
         Database db = new Database();
         //public static List<User> warteschlange = new List<User>();
+
+        static object _lock = new object();
         public static List<string> result = new List<string>();
+        public static ConcurrentDictionary<string, string> result2 = new ConcurrentDictionary<string, string>();
+        public static ConcurrentQueue<User> warteschlange = new ConcurrentQueue<User>();
         User user1;
         User user2;
 
-        public Arena(User _user1, User _user2)
+        public Arena(User user1, User user2)
         {
-            user1 = _user1;
-            user2 = _user2;
+            this.user1 = user1;
+            this.user2 = user2;
         }
 
         public static ManualResetEvent Restart { get; } = new ManualResetEvent(false);
         public static System.Threading.AutoResetEvent event_2 = new System.Threading.AutoResetEvent(false);
 
-        //public static bool PrepareFight(User user)
-        //{
-        //    bool check = false;
-        //    warteschlange.Add(user);
-        //    if (warteschlange.Count >= 2)
-        //    {
-        //        StartBattle(warteschlange[0], warteschlange[1]);
-        //        warteschlange.RemoveAt(1);
-        //        warteschlange.RemoveAt(0);
-        //        check = true;
-        //    }
-        //    return check;
-        //}
+        public string PrepareFight(User user)
+        {
+            string response = "";
+            Monitor.Enter(_lock);
+            if (warteschlange.Count() == 0)
+            {
+                warteschlange.Enqueue(user);
+                Monitor.Exit(_lock);
+                event_2.WaitOne();
+                result2.TryRemove(user.username,out response);
+            }
+            else
+            {
+                warteschlange.TryDequeue(out this.user2);
+                this.user1 = user;
+                Monitor.Exit(_lock);
 
-        public  string StartBattle()
+
+                this.user1.deck = db.showDeck(user1.username);
+                this.user2.deck = db.showDeck(user2.username);
+                //response = StartBattle(user1,user2);
+                result2.TryAdd(user2.username, response);
+
+                Arena.event_2.Set();
+
+            }
+
+            return response;
+            //----------------------------------------
+            //bool check = false;
+            //Monitor.Enter(_lock);
+            //if (warteschlange.Count >= 1)
+            //{
+            //    warteschlange.TryDequeue(out User user2);
+            //    this.user1 = user;
+            //    this.user2 = user2;
+            //    StartBattle();
+            //    warteschlange.Clear();
+            //    check = true;
+            //}
+            //else
+            //{
+            //    warteschlange.Enqueue(user);
+            //}
+
+            //Monitor.Exit(_lock);
+            //return check;
+        }
+        public string StartBattle()
+        //public string StartBattle(User user1, User user2)
         {
             string log = "";
             Random rnd = new Random();
             ICard ActCardUser1;
             ICard ActCardUser2;
             int i = 1;
+            if (!((user1.username == "kienboec" && user2.username == "altenhof") || (user1.username == "altenhof" && user2.username == "kienboec")))
+            {
+                Console.WriteLine("");
+            }
             while (user1.deck.Count() > 0 && user2.deck.Count() > 0 && i <= 100)
             {
                 log += i + ". Runde\n";
@@ -224,9 +268,9 @@ namespace MCTG
             {
                 log += user1.username + " vs " + user2.username + " endet im Unentschieden!\n";
             }
-            result.Add(log);
-            db.setScore(winner, looser);
             
+            db.setScore(winner, looser);
+            result2.TryAdd(user2.username, log);
             return log;
         }
 
