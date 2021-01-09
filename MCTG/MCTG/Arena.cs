@@ -19,16 +19,16 @@ namespace MCTG
         User user1;
         User user2;
 
-        public Arena(User user1, User user2)
-        {
-            this.user1 = user1;
-            this.user2 = user2;
-        }
+        ////public Arena(User user1, User user2)
+        ////{
+        ////    this.user1 = user1;
+        ////    this.user2 = user2;
+        ////}
 
         public static ManualResetEvent Restart { get; } = new ManualResetEvent(false);
         public static System.Threading.AutoResetEvent event_2 = new System.Threading.AutoResetEvent(false);
 
-        public string PrepareFight(User user)
+        public string PrepareArena(User user)
         {
             string response = "";
             Monitor.Enter(_lock);
@@ -48,7 +48,7 @@ namespace MCTG
 
                 this.user1.deck = db.showDeck(user1.username);
                 this.user2.deck = db.showDeck(user2.username);
-                //response = StartBattle(user1,user2);
+                response = StartBattle(user1,user2);
                 result2.TryAdd(user2.username, response);
 
                 Arena.event_2.Set();
@@ -56,28 +56,10 @@ namespace MCTG
             }
 
             return response;
-            //----------------------------------------
-            //bool check = false;
-            //Monitor.Enter(_lock);
-            //if (warteschlange.Count >= 1)
-            //{
-            //    warteschlange.TryDequeue(out User user2);
-            //    this.user1 = user;
-            //    this.user2 = user2;
-            //    StartBattle();
-            //    warteschlange.Clear();
-            //    check = true;
-            //}
-            //else
-            //{
-            //    warteschlange.Enqueue(user);
-            //}
-
-            //Monitor.Exit(_lock);
-            //return check;
+           
         }
-        public string StartBattle()
-        //public string StartBattle(User user1, User user2)
+        //public string StartBattle()
+        public string StartBattle(User user1, User user2)
         {
             string log = "";
             Random rnd = new Random();
@@ -90,10 +72,10 @@ namespace MCTG
             }
             while (user1.deck.Count() > 0 && user2.deck.Count() > 0 && i <= 100)
             {
-                log += i + ". Runde\n";
+                log += "\n"+i + ". Runde\n";
                 log += "KartenAnz " + user1.username + ": " + user1.deck.Count() + "\n";
                 log += "KartenAnz " + user2.username + ": " + user2.deck.Count() + "\n";
-                log += "\n\n";
+                log += "\n";
 
                 int karteuser1 = rnd.Next(0, user1.deck.Count);
                 //db.setCard(i,user1.username, karteuser1 ,user1.battleID);
@@ -111,40 +93,73 @@ namespace MCTG
                     if (ActCardUser1.Name.Contains("Goblin") && ActCardUser2.Name.Contains("Dragon"))
                     {
                         ActCardUser1.Health -= ActCardUser2.Damage;
+                        log += user2.username+": "+ActCardUser2.Name + " macht " + ActCardUser2.Damage + " Damage\n";
+                        log += user1.username+": "+ActCardUser1.Name + " hat Angst vor " + ActCardUser2.Name + "\n";
+                        log += user2.username+": "+ActCardUser2.Name + " gewinnt\n";
                         zv = true;
                     }
                     else if (ActCardUser2.Name.Contains("Goblin") && ActCardUser1.Name.Contains("Dragon"))
                     {
                         ActCardUser2.Health -= ActCardUser1.Damage;
+                        log += user1.username+": "+ ActCardUser1.Name + " macht " + ActCardUser1.Damage + " Damage\n";
+                        log += user2.username+": "+ActCardUser2.Name + " hat Angst vor " + ActCardUser1.Name + "\n";
+                        log += user1.username+": "+ActCardUser1.Name + " gewinnt\n";
                         zv = true;
                     }
 
                     if (ActCardUser1.Name.Contains("Wizzard") && ActCardUser2.Name.Contains("Ork"))
                     {
                         ActCardUser2.Health -= ActCardUser1.Damage;
+                        log += user1.username + ": " + ActCardUser1.Name + " macht " + ActCardUser1.Damage + " Damage\n";
+                        log += user2.username + ": " + ActCardUser1.Name + " kontrolliert " + ActCardUser2.Name + "\n";
+                        log += user1.username + ": " + ActCardUser1.Name + " gewinnt\n";
                         zv = true;
                     }
                     else if (ActCardUser2.Name.Contains("Wizzard") && ActCardUser1.Name.Contains("Ork"))
                     {
                         ActCardUser1.Health -= ActCardUser2.Damage;
+                        log += user2.username + ": " + ActCardUser2.Name + " macht " + ActCardUser2.Damage + " Damage\n";
+                        log += user1.username + ": " + ActCardUser2.Name + " kontrolliert " + ActCardUser1.Name + "\n";
+                        log += user2.username + ": " + ActCardUser2.Name + " gewinnt\n";
                         zv = true;
                     }
 
                     if (ActCardUser1.Name.Contains("Elve") && ActCardUser2.Name.Contains("Dragon"))
                     {
                         ActCardUser2.Health -= ActCardUser1.Damage;
+                        log += user1.username + ": " + ActCardUser1.Name + " macht " + ActCardUser1.Damage + " Damage\n";
+                        log += user2.username + ": " + ActCardUser1.Name + " weicht " + ActCardUser2.Name +" aus\n";
+                        log += user1.username + ": " + ActCardUser1.Name + " gewinnt" + "\n";
                         zv = true;
                     }
                     else if (ActCardUser2.Name.Contains("Elve") && ActCardUser1.Name.Contains("Dragon"))
                     {
                         ActCardUser1.Health -= ActCardUser2.Damage;
+                        log += user2.username + ": " + ActCardUser2.Name + " macht " + ActCardUser2.Damage + " Damage\n";
+                        log += user1.username + ": " + ActCardUser2.Name + " weicht " + ActCardUser1.Name +" aus\n";
+                        log += user2.username + ": " + ActCardUser2.Name + " gewinnt\n";
                         zv = true;
                     }
+
 
                     if (zv == false)
                     {
                         ActCardUser2.Health -= ActCardUser1.Damage;
                         ActCardUser1.Health -= ActCardUser2.Damage;
+                        log += user1.username + ": " + ActCardUser1.Name + " macht " + ActCardUser1.Damage + " Damage\n";
+                        log += user2.username + ": " + ActCardUser2.Name + " macht " + ActCardUser2.Damage + " Damage\n";
+                        if(ActCardUser1.Damage>ActCardUser2.Damage)
+                        {
+                            log += user1.username + ": " + ActCardUser1.Name + " gewinnt\n";
+                        }
+                        else if (ActCardUser2.Damage>ActCardUser1.Damage)
+                        {
+                            log += user2.username + ": " + ActCardUser2.Name + " gewinnt\n";
+                        }
+                        else
+                        {
+                            log += "Unentschieden\n";
+                        }
                     }
                 }
                 else
@@ -156,10 +171,16 @@ namespace MCTG
                         if (ActCardUser1.Element == "Water" && ActCardUser2.Element == "Fire")
                         {
                             ActCardUser2.Health -= ActCardUser1.Damage * 2;
+                            log += user1.username + ": " + ActCardUser1.Name + " macht " + ActCardUser1.Damage * 2 + " Damage\n";
+                            log += user2.username + ": " + ActCardUser1.Name + " ist immun gegen " + ActCardUser2.Name + "\n";
+                            log += user1.username + ": " + ActCardUser1.Name + " gewinnt\n";
                         }
                         else
                         {
                             ActCardUser2.Health -= ActCardUser1.Damage;
+                            log += user1.username + ": " + ActCardUser1.Name + " macht " + ActCardUser1.Damage + " Damage\n";
+                            log += user2.username + ": " + ActCardUser1.Name + " ist immun gegen " + ActCardUser2.Name + "\n";
+                            log += user1.username + ": " + ActCardUser1.Name + " gewinnt\n";
                         }
                         zv = true;
                     }
@@ -168,10 +189,16 @@ namespace MCTG
                         if (ActCardUser1.Element == "Fire")
                         {
                             ActCardUser1.Health -= ActCardUser2.Damage * 2;
+                            log += user2.username + ": " + ActCardUser2.Name + " macht " + ActCardUser2.Damage * 2 + " Damage\n";
+                            log += user1.username + ": " + ActCardUser2.Name + " ist immun gegen " + ActCardUser1.Name + "\n";
+                            log += user2.username + ": " + ActCardUser2.Name + " gewinnt\n";
                         }
                         else
                         {
                             ActCardUser1.Health -= ActCardUser2.Damage;
+                            log += user2.username + ": " + ActCardUser2.Name + " macht " + ActCardUser2.Damage + " Damage\n";
+                            log += user1.username + ": " + ActCardUser2.Name + " ist immun gegen " + ActCardUser1.Name + "\n";
+                            log += user2.username + ": " + ActCardUser2.Name + " gewinnt\n";
                         }
                         zv = true;
                     }
@@ -179,11 +206,15 @@ namespace MCTG
                     if (ActCardUser1.Name.Contains("Knight") && ActCardUser2.Element == "Water")
                     {
                         ActCardUser1.Health = 0;
+                        log += user1.username + ": " + ActCardUser1.Name + " ertrinkt dirket gegen " + ActCardUser2.Name + "\n";
+                        log += user2.username + ": " + ActCardUser2.Name + " gewinnt\n";
                         zv = true;
                     }
                     else if (ActCardUser2.Name.Contains("Knight") && ActCardUser1.Element == "Water")
                     {
                         ActCardUser2.Health = 0;
+                        log += user2.username + ": " + ActCardUser2.Name + " ertrinkt dirket gegen " + ActCardUser1.Name + "\n";
+                        log += user1.username + ": " + ActCardUser1.Name + " gewinnt\n";
                         zv = true;
                     }
 
@@ -194,58 +225,167 @@ namespace MCTG
                         {
                             ActCardUser2.Health -= ActCardUser1.Damage * 2;
                             ActCardUser1.Health -= ActCardUser2.Damage / 2;
+
+                            log += user1.username + ": " + ActCardUser1.Name + " macht " + ActCardUser1.Damage*2 + " Damage\n";
+                            log += user2.username + ": " + ActCardUser2.Name + " macht " + ActCardUser2.Damage/2 + " Damage\n";
+                            if (ActCardUser1.Health > ActCardUser2.Health)
+                            {
+                                log += user1.username + ": " + ActCardUser1.Name + " gewinnt\n";
+                            }
+                            else if (ActCardUser2.Health > ActCardUser1.Health)
+                            {
+                                log += user2.username + ": " + ActCardUser2.Name + " gewinnt\n";
+                            }
+                            else
+                            {
+                                log += "Unentschieden\n";
+                            }
                         }
                         else if (ActCardUser2.Element == "Water" && ActCardUser1.Element == "Fire")
                         {
                             ActCardUser1.Health -= ActCardUser2.Damage * 2;
                             ActCardUser2.Health -= ActCardUser1.Damage / 2;
+
+                            log += user1.username + ": " + ActCardUser1.Name + " macht " + ActCardUser1.Damage/2 + " Damage\n";
+                            log += user2.username + ": " + ActCardUser2.Name + " macht " + ActCardUser2.Damage*2 + " Damage\n";
+                            if (ActCardUser1.Health > ActCardUser2.Health)
+                            {
+                                log += user1.username + ": " + ActCardUser1.Name + " gewinnt\n";
+                            }
+                            else if (ActCardUser2.Health > ActCardUser1.Health)
+                            {
+                                log += user2.username + ": " + ActCardUser2.Name + " gewinnt\n";
+                            }
+                            else
+                            {
+                                log += "Unentschieden\n";
+                            }
                         }
                         //fire-- > normal
                         if (ActCardUser1.Element == "Fire" && ActCardUser2.Element == "Regular")
                         {
                             ActCardUser2.Health -= ActCardUser1.Damage * 2;
                             ActCardUser1.Health -= ActCardUser2.Damage / 2;
+
+                            log += user1.username + ": " + ActCardUser1.Name + " macht " + ActCardUser1.Damage*2 + " Damage\n";
+                            log += user2.username + ": " + ActCardUser2.Name + " macht " + ActCardUser2.Damage/2 + " Damage\n";
+                            if (ActCardUser1.Health > ActCardUser2.Health)
+                            {
+                                log += user1.username + ": " + ActCardUser1.Name + " gewinnt\n";
+                            }
+                            else if (ActCardUser2.Health > ActCardUser1.Health)
+                            {
+                                log += user2.username + ": " + ActCardUser2.Name + " gewinnt\n";
+                            }
+                            else
+                            {
+                                log += "Unentschieden\n";
+                            }
                         }
                         else if (ActCardUser2.Element == "Fire" && ActCardUser1.Element == "Regular")
                         {
                             ActCardUser1.Health -= ActCardUser2.Damage * 2;
                             ActCardUser2.Health -= ActCardUser1.Damage / 2;
+
+                            log += user1.username + ": " + ActCardUser1.Name + " macht " + ActCardUser1.Damage/2 + " Damage\n";
+                            log += user2.username + ": " + ActCardUser2.Name + " macht " + ActCardUser2.Damage*2 + " Damage\n";
+                            if (ActCardUser1.Health > ActCardUser2.Health)
+                            {
+                                log += user1.username + ": " + ActCardUser1.Name + " gewinnt\n";
+                            }
+                            else if (ActCardUser2.Health > ActCardUser1.Health)
+                            {
+                                log += user2.username + ": " + ActCardUser2.Name + " gewinnt\n";
+                            }
+                            else
+                            {
+                                log += "Unentschieden\n";
+                            }
                         }
                         //normal-- > water
                         if (ActCardUser1.Element == "Regular" && ActCardUser2.Element == "Water")
                         {
                             ActCardUser2.Health -= ActCardUser1.Damage * 2;
                             ActCardUser1.Health -= ActCardUser2.Damage / 2;
+
+                            log += user1.username + ": " + ActCardUser1.Name + " macht " + ActCardUser1.Damage*2 + " Damage\n";
+                            log += user2.username + ": " + ActCardUser2.Name + " macht " + ActCardUser2.Damage/2 + " Damage\n";
+                            if (ActCardUser1.Health > ActCardUser2.Health)
+                            {
+                                log += user1.username + ": " + ActCardUser1.Name + " gewinnt\n";
+                            }
+                            else if (ActCardUser2.Health > ActCardUser1.Health)
+                            {
+                                log += user2.username + ": " + ActCardUser2.Name + " gewinnt\n";
+                            }
+                            else
+                            {
+                                log += "Unentschieden\n";
+                            }
                         }
                         else if (ActCardUser2.Element == "Regular" && ActCardUser1.Element == "Water")
                         {
                             ActCardUser1.Health -= ActCardUser2.Damage * 2;
                             ActCardUser2.Health -= ActCardUser1.Damage / 2;
+
+                            log += user1.username + ": " + ActCardUser1.Name + " macht " + ActCardUser1.Damage/2 + " Damage\n";
+                            log += user2.username + ": " + ActCardUser2.Name + " macht " + ActCardUser2.Damage*2 + " Damage\n";
+                            if (ActCardUser1.Health > ActCardUser2.Health)
+                            {
+                                log += user1.username + ": " + ActCardUser1.Name + " gewinnt\n";
+                            }
+                            else if (ActCardUser2.Health > ActCardUser1.Health)
+                            {
+                                log += user2.username + ": " + ActCardUser2.Name + " gewinnt\n";
+                            }
+                            else
+                            {
+                                log += "Unentschieden\n";
+                            }
                         }
                         //noeffect
                         if (ActCardUser1.Element == ActCardUser2.Element)
                         {
                             ActCardUser1.Health -= ActCardUser2.Damage;
                             ActCardUser2.Health -= ActCardUser1.Damage;
+
+                            log += user1.username + ": " + ActCardUser1.Name + " macht " + ActCardUser1.Damage + " Damage\n";
+                            log += user2.username + ": " + ActCardUser2.Name + " macht " + ActCardUser2.Damage + " Damage\n";
+                            if (ActCardUser1.Health > ActCardUser2.Health)
+                            {
+                                log += user1.username + ": " + ActCardUser1.Name + " gewinnt\n";
+                            }
+                            else if (ActCardUser2.Health > ActCardUser1.Health)
+                            {
+                                log += user2.username + ": " + ActCardUser2.Name + " gewinnt\n";
+                            }
+                            else
+                            {
+                                log += "Unentschieden\n";
+                            }
                         }
 
                     }
                 }
-
+                
                 if (ActCardUser1.Health > ActCardUser2.Health)
                 {
+                    ActCardUser1.Health = 1000;
+                    ActCardUser2.Health = 1000;
                     user1.deck.Add(ActCardUser2);
                     user2.deck.Remove(ActCardUser2);
                 }
                 else if (ActCardUser1.Health < ActCardUser2.Health)
                 {
+                    ActCardUser1.Health = 1000;
+                    ActCardUser2.Health = 1000;
                     user2.deck.Add(ActCardUser1);
                     user1.deck.Remove(ActCardUser1);
                 }
 
                 i++;
             }
-            log += i + ". Runde\n";
+            log += "\n Endergebnis:\n";
             log += "KartenAnz " + user1.username + ": " + user1.deck.Count() + "\n";
             log += "KartenAnz " + user2.username + ": " + user2.deck.Count() + "\n";
             log += "\n\n";
@@ -270,7 +410,7 @@ namespace MCTG
             }
             
             db.setScore(winner, looser);
-            result2.TryAdd(user2.username, log);
+            //result2.TryAdd(user2.username, log);
             return log;
         }
 

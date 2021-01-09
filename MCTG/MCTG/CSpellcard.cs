@@ -6,8 +6,9 @@ namespace MCTG
 {
     class CSpellcard:ICard
     {
-        public CSpellcard(string _name, string _element, double _damage, string _cardtype)
+        public CSpellcard(string id,string _name, string _element, double _damage, string _cardtype)
         {
+            ID = id;
             Name = _name;
             Element = _element;
             Damage = _damage;
@@ -23,15 +24,6 @@ namespace MCTG
         public string CardType { get; set; }
         public string Type { get; set; }
 
-        public void attack()
-        {
-            Console.WriteLine(Name + " hat " + Damage + " Schaden gemacht");
-        }
-
-        public bool isActive()
-        {
-            return false;
-        }
     }
 }
 

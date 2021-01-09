@@ -11,7 +11,7 @@ namespace MCTG
     {
 
         static object _lock = new object();
-        public static string prolog=""; 
+        public static string prolog = "";
         public static string connstring = "Server=127.0.0.1;Port=5432;Database=MCTGData;User Id=postgres;Password=postgres;";
         NpgsqlConnection connection = new NpgsqlConnection(connstring);
         List<string> OldDeck = new List<string>();
@@ -308,13 +308,13 @@ namespace MCTG
             for (int i = 0; i < IDList.Count; i++)
             {
                 connection.Open();
-                NpgsqlCommand cmd2 = new NpgsqlCommand("Select id, name, damage FROM cards WHERE id='" + IDList[i] + "';", connection);
+                NpgsqlCommand cmd2 = new NpgsqlCommand("Select id, name, damage, element, type, cardtype FROM cards WHERE id='" + IDList[i] + "';", connection);
                 NpgsqlDataReader dataReader2 = cmd2.ExecuteReader();
 
                 for (int ii = 0; dataReader2.Read(); ii++)
                 {
                     //CardList.Insert(ii,"{\"Id\":\"" + dataReader2[0].ToString() + ", \"Name\":\"" + dataReader2[1].ToString() + ", \"Damage\":" + dataReader2[2].ToString() + "}");
-                    CardList.Insert(ii, @"{  'Id': '" + dataReader2[0].ToString() + "', 'Name': '" + dataReader2[1].ToString() + "', 'Damage': '" + dataReader2[2].ToString() + "'} ");
+                    CardList.Insert(ii, @"{  'Id': '" + dataReader2[0].ToString() + "', 'Name': '" + dataReader2[1].ToString() + "', 'Damage': '" + dataReader2[2].ToString() + "', 'Element': '" + dataReader2[3].ToString() + "', 'Type': '" + dataReader2[4].ToString() + "', 'CardType': '" + dataReader2[5].ToString() + "'} ");
                     //dataItems+=dataReader[0].ToString() + "," + dataReader[1].ToString() + "\r\n";
                 }
 
@@ -327,7 +327,7 @@ namespace MCTG
 
         public List<ICard> showDeck(string username)
         {
-           
+
             List<string> CardID = new List<string>();
             List<string> Deck = new List<string>();
             connection.Open();
@@ -485,7 +485,7 @@ namespace MCTG
             List<string> warteschlange = new List<string>();
             string oponent = "";
             string response = "";
-            
+
             Monitor.Enter(_lock);
             warteschlange = AnzWarteschlange(username);
             if (warteschlange.Count == 0)
@@ -514,8 +514,8 @@ namespace MCTG
 
                 user1.deck = showDeck(user1.username);
                 user2.deck = showDeck(user2.username);
-                Arena arena = new Arena(user1, user2);
-                response = arena.StartBattle();
+                ////Arena arena = new Arena(user1, user2);
+                ////response = arena.StartBattle();
 
                 Arena.event_2.Set();
 
@@ -523,7 +523,7 @@ namespace MCTG
 
             if (response == "")
             {
-                Arena.result2.TryRemove(username,out response);
+                Arena.result2.TryRemove(username, out response);
             }
 
             return response;
@@ -532,9 +532,9 @@ namespace MCTG
         public string findBattleQueue(string username)
         {
             string response = "";
-            //Arena arena = new Arena();
+            Arena arena = new Arena();
             User user = new User(username);
-            //response = arena.PrepareFight(user);
+            response = arena.PrepareArena(user);
 
             return response;
 
@@ -547,20 +547,25 @@ namespace MCTG
             int i = 0;
             while (i < deck.Count)
             {
+                string Element = "";
+                string Type = "";
+                string CardType = "";
                 JObject json = JObject.Parse(deck[i]);
                 string ID = json.SelectToken("Id").ToString();
                 string Name = json.SelectToken("Name").ToString();
                 double Damage = double.Parse(json.SelectToken("Damage").ToString());
-                string Element = json.SelectToken("Element").ToString();
-                string Type = json.SelectToken("Type").ToString();
-                string CardType = json.SelectToken("CardType").ToString();
+
+                Element = json.SelectToken("Element").ToString();
+                Type = json.SelectToken("Type").ToString();
+                CardType = json.SelectToken("CardType").ToString();
+
                 if (CardType == "monster")
                 {
-                    IDeck.Add(new CMonster(Name, Element, Damage,Type,CardType));
+                    IDeck.Add(new CMonster(ID,Name, Element, Damage, Type, CardType));
                 }
-                else if(CardType=="spell")
+                else if (CardType == "spell")
                 {
-                    IDeck.Add(new CSpellcard(Name,Element,Damage,CardType));
+                    IDeck.Add(new CSpellcard(ID,Name, Element, Damage, CardType));
                 }
                 i++;
             }

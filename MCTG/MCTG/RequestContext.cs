@@ -278,8 +278,8 @@ namespace MCTG
                     return 1;
                 }
 
-                string log = db.findBattleDB(username);
-                //string log = db.findBattleQueue(username);
+                //string log = db.findBattleDB(username);
+                string log = db.findBattleQueue(username);
 
 
                 if (log != "")

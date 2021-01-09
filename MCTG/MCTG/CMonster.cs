@@ -6,8 +6,9 @@ namespace MCTG
 {
     class CMonster:ICard
     {
-        public CMonster(string _name, string _element, double _damage, string _type, string _cardtype)
+        public CMonster(string id,string _name, string _element, double _damage, string _type, string _cardtype)
         {
+            ID = id;
             Name = _name;
             Element = _element;
             Damage = _damage;
@@ -23,14 +24,5 @@ namespace MCTG
         public string CardType { get; set; }
         public double Health { get; set; }
 
-        public void attack()
-        {
-            Console.WriteLine(Name + " der " + Type + " hat " + Damage + " Schaden gemacht");
-        }
-
-        public bool isActive()
-        {
-            return false;
-        }
     }
 }
