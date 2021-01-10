@@ -28,7 +28,7 @@ namespace MCTG
         public static ManualResetEvent Restart { get; } = new ManualResetEvent(false);
         public static System.Threading.AutoResetEvent event_2 = new System.Threading.AutoResetEvent(false);
 
-        public string PrepareArena(User user)
+        public string FillArena(User user)
         {
             string response = "";
             Monitor.Enter(_lock);
@@ -51,7 +51,9 @@ namespace MCTG
                 response = StartBattle(user1,user2);
                 result2.TryAdd(user2.username, response);
 
-                Arena.event_2.Set();
+                event_2.Set();
+                event_2.Reset();
+                
 
             }
 

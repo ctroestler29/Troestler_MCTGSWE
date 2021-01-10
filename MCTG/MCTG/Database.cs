@@ -518,6 +518,7 @@ namespace MCTG
                 ////response = arena.StartBattle();
 
                 Arena.event_2.Set();
+                Arena.event_2.Reset();
 
             }
 
@@ -534,7 +535,7 @@ namespace MCTG
             string response = "";
             Arena arena = new Arena();
             User user = new User(username);
-            response = arena.PrepareArena(user);
+            response = arena.FillArena(user);
 
             return response;
 
